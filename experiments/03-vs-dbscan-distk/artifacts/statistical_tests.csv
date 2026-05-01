@@ -1,0 +1,3 @@
+metric,n_pairs,statistic,p_value,significant,significant_holm
+MSI_ALL_vs_distk,50,538.0,0.342283,False,False
+ARI_CLASSF_vs_distk,18,81.0,0.865044,False,False

@@ -1,0 +1,11 @@
+{
+  "metaheuristic": "ils",
+  "label": "ILS",
+  "median_msi": 0.516278,
+  "mean_msi": 0.522025,
+  "n_datasets": 50,
+  "friedman_p_msi": 0.007597,
+  "friedman_significant_msi": true,
+  "friedman_p_ari_classf": 0.000618,
+  "friedman_significant_ari_classf": true
+}

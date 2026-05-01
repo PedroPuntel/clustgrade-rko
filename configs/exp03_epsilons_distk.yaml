@@ -1,0 +1,205 @@
+# Experiment 03 — DBSCAN-DistK (Semaan 2012) on MinMax-scaled MDS [0,1]^2 space
+# k* sweep: [3, 4, 5, 10, 15, 20, 50]
+# Rules: ['median', 'max', 'pico10', 'pico20']
+# MinPts fixed at 5 for cross-method comparability (departs from Semaan's qtdeObjetos=k*).
+# Selection: max silhouette on scaled MDS with labels != -1, subject to K >= 2.
+2-FACE:
+  epsilon: 0.034988
+  k_star: 3
+  rule: median
+200DATA:
+  epsilon: 0.043256
+  k_star: 10
+  rule: median
+400P3C:
+  epsilon: 0.044852
+  k_star: 4
+  rule: pico20
+A1:
+  epsilon: 0.056662
+  k_star: 3
+  rule: max
+AGGREGATION:
+  epsilon: 0.020045
+  k_star: 4
+  rule: pico20
+BANKNOTE:
+  epsilon: 0.059268
+  k_star: 10
+  rule: pico20
+BREASTB:
+  epsilon: 0.057999
+  k_star: 3
+  rule: median
+BROKEN-RING:
+  epsilon: 0.057247
+  k_star: 10
+  rule: pico10
+BUPA:
+  epsilon: 0.045461
+  k_star: 15
+  rule: median
+CHART:
+  epsilon: 0.024993
+  k_star: 4
+  rule: median
+COMPOUND:
+  epsilon: 0.065713
+  k_star: 20
+  rule: median
+CONCRETEDATA:
+  epsilon: 0.071994
+  k_star: 20
+  rule: pico10
+DBLCA:
+  epsilon: 0.056618
+  k_star: 3
+  rule: median
+DOWJONES:
+  epsilon: 0.087106
+  k_star: 15
+  rule: pico10
+ECOLI:
+  epsilon: 0.034757
+  k_star: 4
+  rule: pico10
+FACE:
+  epsilon: 0.022085
+  k_star: 4
+  rule: pico10
+FLAME:
+  epsilon: 0.059082
+  k_star: 4
+  rule: median
+FORESTFIRES:
+  epsilon: 0.034343
+  k_star: 10
+  rule: median
+GAMMA400:
+  epsilon: 0.053232
+  k_star: 20
+  rule: median
+GAUSS9:
+  epsilon: 0.016994
+  k_star: 3
+  rule: pico10
+GLASS:
+  epsilon: 0.101875
+  k_star: 3
+  rule: pico20
+HABERMAN:
+  epsilon: 0.023694
+  k_star: 4
+  rule: pico10
+HAYES-ROTH:
+  epsilon: 0.041103
+  k_star: 3
+  rule: pico10
+INDIAN:
+  epsilon: 0.034419
+  k_star: 3
+  rule: pico10
+IONOSPHERE:
+  epsilon: 0.044055
+  k_star: 10
+  rule: pico10
+IRIS:
+  epsilon: 0.084461
+  k_star: 5
+  rule: pico10
+JAIN:
+  epsilon: 0.026983
+  k_star: 3
+  rule: median
+MARONNA:
+  epsilon: 0.073323
+  k_star: 4
+  rule: pico10
+NEW-THYROID:
+  epsilon: 0.038324
+  k_star: 4
+  rule: pico20
+NUMBERS2:
+  epsilon: 0.014168
+  k_star: 3
+  rule: median
+OUTLIERS:
+  epsilon: 0.026117
+  k_star: 4
+  rule: pico10
+PARKINSONS:
+  epsilon: 0.066861
+  k_star: 10
+  rule: median
+PATHBASED:
+  epsilon: 0.045725
+  k_star: 4
+  rule: median
+PIMA-INDIANS:
+  epsilon: 0.047670
+  k_star: 4
+  rule: pico10
+R15:
+  epsilon: 0.016455
+  k_star: 3
+  rule: pico10
+RUSPINI:
+  epsilon: 0.062202
+  k_star: 3
+  rule: median
+SEEDS:
+  epsilon: 0.049147
+  k_star: 3
+  rule: median
+SONAR:
+  epsilon: 0.097213
+  k_star: 10
+  rule: pico20
+SPHERICAL4D3C:
+  epsilon: 0.031671
+  k_star: 3
+  rule: median
+SPIRAL:
+  epsilon: 0.014690
+  k_star: 3
+  rule: pico10
+SPRDESP:
+  epsilon: 0.012323
+  k_star: 5
+  rule: pico10
+SYNTHETICCONTROL:
+  epsilon: 0.020834
+  k_star: 3
+  rule: pico20
+TRIPADVISOR:
+  epsilon: 0.042252
+  k_star: 20
+  rule: median
+UNIFORM400:
+  epsilon: 0.034963
+  k_star: 3
+  rule: median
+UNIFORM700:
+  epsilon: 0.014562
+  k_star: 3
+  rule: pico20
+VOWEL2:
+  epsilon: 0.023632
+  k_star: 3
+  rule: median
+WAVEFORM21:
+  epsilon: 0.008118
+  k_star: 3
+  rule: median
+WDBC:
+  epsilon: 0.007803
+  k_star: 3
+  rule: pico10
+WINE:
+  epsilon: 0.043317
+  k_star: 3
+  rule: median
+YEAST:
+  epsilon: 0.041316
+  k_star: 4
+  rule: pico20

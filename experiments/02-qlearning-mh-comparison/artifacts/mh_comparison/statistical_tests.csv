@@ -1,0 +1,9 @@
+metric,test,n_blocks,statistic,p_value,significant,pair,n_pairs,significant_holm,p_holm
+MSI,friedman,50.0,9.76,0.007597,True,,,,
+MSI,wilcoxon,,360.0,0.00673,True,brkga_vs_vns,50.0,True,0.01346
+MSI,wilcoxon,,297.0,0.000755,True,brkga_vs_ils,50.0,True,0.002265
+MSI,wilcoxon,,586.0,0.625368,False,vns_vs_ils,50.0,False,0.625368
+ARI_CLASSF,friedman,18.0,14.7778,0.000618,True,,,,
+ARI_CLASSF,wilcoxon,,33.0,0.020813,True,brkga_vs_vns,18.0,True,0.041626
+ARI_CLASSF,wilcoxon,,4.0,5.3e-05,True,brkga_vs_ils,18.0,True,0.000159
+ARI_CLASSF,wilcoxon,,68.0,0.468292,False,vns_vs_ils,18.0,False,0.468292

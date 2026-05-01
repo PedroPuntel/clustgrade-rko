@@ -1,0 +1,9 @@
+{
+  "config": "noQF+MDS",
+  "quadrat_filter": false,
+  "msi_space": "mds",
+  "selected_by": "highest_median_msi_all_datasets",
+  "median_msi": 0.538309032181917,
+  "friedman_p_msi": 0.22324703200449925,
+  "friedman_significant_msi": false
+}

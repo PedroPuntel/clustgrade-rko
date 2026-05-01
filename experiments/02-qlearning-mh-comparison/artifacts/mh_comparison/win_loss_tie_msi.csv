@@ -1,0 +1,4 @@
+metric,pair,brkga_wins,vns_wins,ties,total,ils_wins
+MSI,brkga_vs_vns,9.0,22.0,19,50,
+MSI,brkga_vs_ils,7.0,,21,50,22.0
+MSI,vns_vs_ils,,10.0,30,50,10.0

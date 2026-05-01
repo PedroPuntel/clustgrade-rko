@@ -1,0 +1,9 @@
+familia,teste,comparativo,p_valor,p_valor_holm
+ISM,Friedman,---,0.007597,7.5970e-03
+ISM,Wilcoxon,BRKGA vs. VNS,0.00673,0.0135
+ISM,Wilcoxon,BRKGA vs. ILS,0.000755,0.0023
+ISM,Wilcoxon,VNS vs. ILS,0.625368,0.6254
+IRA,Friedman,---,0.000618,6.1800e-04
+IRA,Wilcoxon,BRKGA vs. VNS,0.020813,0.0416
+IRA,Wilcoxon,BRKGA vs. ILS,5.3e-05,0.0002
+IRA,Wilcoxon,VNS vs. ILS,0.468292,0.4683

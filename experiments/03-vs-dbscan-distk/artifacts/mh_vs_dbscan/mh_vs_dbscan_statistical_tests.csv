@@ -1,0 +1,9 @@
+metric,test,pair,n_pairs,statistic,p_value,significant,significant_holm,p_holm,comparison_label
+MSI,wilcoxon,msi_brkga_vs_msi_dbscan,50,315.0,0.001485,True,True,0.004455,
+MSI,wilcoxon,msi_vns_vs_msi_dbscan,50,407.0,0.0255,True,True,0.040242,
+MSI,wilcoxon,msi_ils_vs_msi_dbscan,50,398.0,0.020121,True,True,0.040242,
+ARI_CLASSF,wilcoxon,ari_brkga_vs_ari_dbscan,18,58.0,0.246208,False,False,0.738624,
+ARI_CLASSF,wilcoxon,ari_vns_vs_ari_dbscan,18,84.0,0.966118,False,False,1.0,
+ARI_CLASSF,wilcoxon,ari_ils_vs_ari_dbscan,18,82.0,0.898575,False,False,1.0,
+MSI,wilcoxon,MSI_ALL_vs_distk,50,538.0,0.342283,False,False,0.684566,ClustGrade-RKO Híbrido vs DBSCAN
+ARI_CLASSF,wilcoxon,ARI_CLASSF_vs_distk,18,81.0,0.865044,False,False,0.865044,ClustGrade-RKO Híbrido vs DBSCAN

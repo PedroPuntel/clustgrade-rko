@@ -1,0 +1,4 @@
+metric,pair,brkga_wins,vns_wins,ties,total,ils_wins
+ARI_CLASSF,brkga_vs_vns,2.0,8.0,8,18,
+ARI_CLASSF,brkga_vs_ils,0.0,,6,18,12.0
+ARI_CLASSF,vns_vs_ils,,3.0,11,18,4.0

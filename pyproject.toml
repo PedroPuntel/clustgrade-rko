@@ -1,0 +1,72 @@
+[project]
+name = "clustgrade-rko"
+version = "0.1.0"
+description = "ClustGrade-RKO: a hybrid grid + density clustering algorithm wrapped as a Random-Key Optimizer (BRKGA + VNS + ILS) with optional Q-learning adaptive parameter selection."
+authors = [
+    {name = "Pedro H. Puntel"}
+]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy (>=2.4.2,<3.0.0)",
+    "scipy (>=1.17.0,<2.0.0)",
+    "pandas (>=3.0.0,<4.0.0)",
+    "scikit-learn (>=1.8.0,<2.0.0)",
+    "pydantic (>=2.12.5,<3.0.0)",
+    "pyyaml (>=6.0.3,<7.0.0)",
+    "joblib (>=1.5.3,<2.0.0)",
+    "matplotlib (>=3.10.8,<4.0.0)",
+    "seaborn (>=0.13.2,<0.14.0)"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "black (>=26.1.0,<27.0.0)",
+    "ruff (>=0.14.14,<0.15.0)",
+    "mypy (>=1.19.1,<2.0.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# rko/* modules deliberately import after sys.path bootstrap (E402)
+# and use single-letter math-notation locals M, A from the algorithm spec (N803, N806).
+"rko/environment.py" = ["E402", "N803", "N806"]
+"rko/pipeline.py"   = ["E402", "N803", "N806"]
+"rko/run.py"        = ["E402"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+# rko/run.py is a CLI script with argparse.Namespace and pandas/numpy
+# return-type interactions that mypy cannot narrow without verbose casts.
+[[tool.mypy.overrides]]
+module = "rko.run"
+warn_return_any = false
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

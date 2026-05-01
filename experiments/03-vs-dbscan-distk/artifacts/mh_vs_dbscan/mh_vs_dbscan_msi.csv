@@ -1,0 +1,4 @@
+metaheuristic,label,n_total,V,D,E,overall_prop,relative_prop
+brkga,BRKGA,50,12,33,5,0.3077,0.24
+vns,VNS,50,13,30,7,0.3333,0.26
+ils,ILS,50,14,30,6,0.359,0.28

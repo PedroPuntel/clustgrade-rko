@@ -1,0 +1,4 @@
+rank,metaheuristic,label,n_datasets,median,mean,std,min,max,metric
+1,ils,ILS,50,0.516278,0.522025,0.15119,0.223256,0.835455,MSI
+2,vns,VNS,50,0.515851,0.52151,0.148116,0.2285,0.834459,MSI
+3,brkga,BRKGA,50,0.495516,0.506378,0.147656,0.201932,0.823274,MSI

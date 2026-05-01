@@ -1,0 +1,7 @@
+config_a,config_b,metric,a_wins,b_wins,ties,total
+QF+FEATURE,QF+MDS,ari,3,3,2,8
+QF+FEATURE,noQF+FEATURE,ari,1,2,5,8
+QF+FEATURE,noQF+MDS,ari,3,1,4,8
+QF+MDS,noQF+FEATURE,ari,3,2,3,8
+QF+MDS,noQF+MDS,ari,5,0,3,8
+noQF+FEATURE,noQF+MDS,ari,3,2,3,8

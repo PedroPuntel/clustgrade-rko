@@ -1,0 +1,9 @@
+metric,method_code,method_label,comparison_label,n_pairs,mean_gap_raw,mean_gap_pct,n_gap_pct_valid
+MSI,brkga,BRKGA,BRKGA vs DBSCAN,50,-0.067758,-6.793255,50
+MSI,vns,VNS,VNS vs DBSCAN,50,-0.052627,-3.639518,50
+MSI,ils,ILS,ILS vs DBSCAN,50,-0.052112,-3.945522,50
+MSI,hybrid,ClustGrade-RKO Híbrido,ClustGrade-RKO Híbrido vs DBSCAN,50,0.007006,8.375883,50
+ARI_CLASSF,brkga,BRKGA,BRKGA vs DBSCAN,18,-0.116616,427.667013,18
+ARI_CLASSF,vns,VNS,VNS vs DBSCAN,18,-0.057773,1070.098912,18
+ARI_CLASSF,ils,ILS,ILS vs DBSCAN,18,-0.056832,1065.929463,18
+ARI_CLASSF,hybrid,ClustGrade-RKO Híbrido,ClustGrade-RKO Híbrido vs DBSCAN,18,-0.019399,1116.355385,18
