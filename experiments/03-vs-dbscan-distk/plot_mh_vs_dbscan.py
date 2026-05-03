@@ -544,7 +544,7 @@ def _plot_stacked_wins_vs_dbscan(table: pd.DataFrame, metric_label: str, out_nam
     dbscan_vals = data["dbscan_wins"].values.astype(float)
     ties_vals = data["ties"].values.astype(float)
 
-    TIES_COLOR = "#AAAAAA"
+    ties_color = "#AAAAAA"
 
     fig, ax = plt.subplots(figsize=(8.5, 4.5))
     method_colors = _bar_colors_with_hybrid(method_codes)
@@ -572,7 +572,7 @@ def _plot_stacked_wins_vs_dbscan(table: pd.DataFrame, metric_label: str, out_nam
         x,
         ties_vals,
         bottom=method_vals + dbscan_vals,
-        color=TIES_COLOR,
+        color=ties_color,
         edgecolor="black",
         linewidth=0.5,
         label=r"Empates ($\Delta \leq 0{,}01$)",
