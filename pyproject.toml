@@ -20,16 +20,14 @@ dependencies = [
     "seaborn (>=0.13.2,<0.14.0)"
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest (>=9.0.2,<10.0.0)",
-    "black (>=26.1.0,<27.0.0)",
-    "ruff (>=0.14.14,<0.15.0)",
-    "mypy (>=1.19.1,<2.0.0)"
-]
-
 [tool.poetry]
 package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=9.0.2,<10.0.0"
+black = ">=26.1.0,<27.0.0"
+ruff = ">=0.14.14,<0.15.0"
+mypy = ">=1.19.1,<2.0.0"
 
 [tool.black]
 line-length = 100
