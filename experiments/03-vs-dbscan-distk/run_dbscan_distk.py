@@ -27,6 +27,7 @@ Outputs:
 Usage:
     poetry run python -m experiments.03-vs-dbscan-distk.run_dbscan_distk
 """
+
 from __future__ import annotations
 
 import sys
@@ -72,6 +73,7 @@ RULES: list[str] = ["median", "max", "pico10", "pico20"]
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def scale_mds(mds: np.ndarray) -> np.ndarray:
     scaler = MinMaxScaler()
@@ -125,7 +127,8 @@ def rule_epsilon(vdist: np.ndarray, rule: str) -> float | None:
 
 
 def evaluate_epsilon(
-    scaled_mds: np.ndarray, eps: float,
+    scaled_mds: np.ndarray,
+    eps: float,
 ) -> tuple[np.ndarray | None, int, float | None]:
     """Run DBSCAN and compute silhouette on non-noise points."""
     labels = DBSCAN(eps=eps, min_samples=MIN_PTS).fit_predict(scaled_mds)
@@ -145,7 +148,9 @@ def evaluate_epsilon(
 
 def select_best_triple(
     scaled_mds: np.ndarray,
-) -> tuple[int | None, str | None, float | None, np.ndarray | None, int, float | None, np.ndarray | None]:
+) -> tuple[
+    int | None, str | None, float | None, np.ndarray | None, int, float | None, np.ndarray | None
+]:
     """Sweep all (k*, rule) triples, pick the one with max silhouette.
 
     Returns (k_star, rule, eps, labels, k, silhouette, winning_vdist). If no
@@ -191,6 +196,7 @@ def select_best_triple(
 # YAML writer
 # ---------------------------------------------------------------------------
 
+
 def write_epsilons_yaml(
     path: Path,
     selections: dict[str, dict[str, float | int | str | None]],
@@ -223,6 +229,7 @@ def write_epsilons_yaml(
 # Plot
 # ---------------------------------------------------------------------------
 
+
 def plot_distk(
     dataset_id: str,
     vdist: np.ndarray | None,
@@ -233,14 +240,26 @@ def plot_distk(
     """Per-dataset sorted k*-NN curve (winning k*) with selected epsilon overlaid."""
     fig, ax = plt.subplots(figsize=(6, 3))
     if vdist is None or k_star is None:
-        ax.text(0.5, 0.5, "No valid candidate (K<2 for all triples)",
-                ha="center", va="center", transform=ax.transAxes, fontsize=10)
+        ax.text(
+            0.5,
+            0.5,
+            "No valid candidate (K<2 for all triples)",
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+            fontsize=10,
+        )
         ax.set_title(f"{dataset_id} — DBSCAN-DistK: no selection")
     else:
         ax.plot(vdist, color="tab:blue", linewidth=1.2)
         if eps is not None:
-            ax.axhline(eps, color="tab:green", linestyle="-", linewidth=1.2,
-                       label=f"eps={eps:.4f} (rule={rule})")
+            ax.axhline(
+                eps,
+                color="tab:green",
+                linestyle="-",
+                linewidth=1.2,
+                label=f"eps={eps:.4f} (rule={rule})",
+            )
             ax.legend(loc="best", fontsize=8)
         ax.set_title(f"{dataset_id} — k*={k_star}-NN curve [scaled MDS, DistK]")
         ax.set_xlabel("Points (sorted)")
@@ -255,6 +274,7 @@ def plot_distk(
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     manifest = load_manifest()
@@ -272,8 +292,9 @@ def main() -> None:
             scaled = scale_mds(mds)
             true_labels = load_stored_labels(dataset_id) if group == "classf" else None
 
-            (best_k_star, best_rule, best_eps, best_labels, best_k,
-             best_sil, best_vdist) = select_best_triple(scaled)
+            best_k_star, best_rule, best_eps, best_labels, best_k, best_sil, best_vdist = (
+                select_best_triple(scaled)
+            )
 
             selections[dataset_id] = {
                 "epsilon": best_eps,
@@ -285,29 +306,44 @@ def main() -> None:
 
             if best_eps is None or best_labels is None:
                 logger.warning("  No (k*, rule) triple yielded K>=2 — recording as null")
-                records.append({
-                    "dataset_id": dataset_id, "group": group,
-                    "algorithm": ALGORITHM, "seed": 0,
-                    "k": None, "msi": None, "ari": None,
-                    "k_star": None, "rule": None, "epsilon": None,
-                })
+                records.append(
+                    {
+                        "dataset_id": dataset_id,
+                        "group": group,
+                        "algorithm": ALGORITHM,
+                        "seed": 0,
+                        "k": None,
+                        "msi": None,
+                        "ari": None,
+                        "k_star": None,
+                        "rule": None,
+                        "epsilon": None,
+                    }
+                )
                 continue
 
             msi = compute_msi(scaled, best_labels)
             ari = compute_ari(true_labels, best_labels) if true_labels is not None else None
-            records.append({
-                "dataset_id": dataset_id, "group": group,
-                "algorithm": ALGORITHM, "seed": 0,
-                "k": best_k,
-                "msi": msi,
-                "ari": ari,
-                "k_star": best_k_star,
-                "rule": best_rule,
-                "epsilon": round(float(best_eps), 6),
-            })
+            records.append(
+                {
+                    "dataset_id": dataset_id,
+                    "group": group,
+                    "algorithm": ALGORITHM,
+                    "seed": 0,
+                    "k": best_k,
+                    "msi": msi,
+                    "ari": ari,
+                    "k_star": best_k_star,
+                    "rule": best_rule,
+                    "epsilon": round(float(best_eps), 6),
+                }
+            )
             logger.info(
                 "  DBSCAN-DistK(k*=%d, rule=%s, eps=%.4f)  K=%d  sil=%s  MSI=%s  ARI=%s",
-                best_k_star, best_rule, best_eps, best_k,
+                best_k_star,
+                best_rule,
+                best_eps,
+                best_k,
                 f"{best_sil:.4f}" if best_sil is not None else "N/A",
                 f"{msi:.4f}" if msi is not None else "N/A",
                 f"{ari:.4f}" if ari is not None else "N/A",
@@ -315,12 +351,20 @@ def main() -> None:
         except Exception as exc:  # noqa: BLE001
             logger.error("  FAILED %s: %s", dataset_id, exc)
             selections[dataset_id] = {"epsilon": None, "k_star": None, "rule": None}
-            records.append({
-                "dataset_id": dataset_id, "group": group,
-                "algorithm": ALGORITHM, "seed": 0,
-                "k": None, "msi": None, "ari": None,
-                "k_star": None, "rule": None, "epsilon": None,
-            })
+            records.append(
+                {
+                    "dataset_id": dataset_id,
+                    "group": group,
+                    "algorithm": ALGORITHM,
+                    "seed": 0,
+                    "k": None,
+                    "msi": None,
+                    "ari": None,
+                    "k_star": None,
+                    "rule": None,
+                    "epsilon": None,
+                }
+            )
 
     write_epsilons_yaml(EPSILON_CONFIG, selections)
     out_path = ARTIFACTS / "dbscan_distk_runs.csv"

@@ -24,6 +24,7 @@ Produces:
 Usage:
     poetry run python -m experiments.03-vs-dbscan-distk.plot
 """
+
 from __future__ import annotations
 
 import json
@@ -32,10 +33,10 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
 import yaml
+from matplotlib.axes import Axes
 from sklearn.cluster import DBSCAN
 
 _ROOT = Path(__file__).parents[2]
@@ -46,21 +47,16 @@ for p in [str(_SRC), str(_RKO_FW), str(_ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from RKO import RKO
-
-from rko.environment import ClustGradeEnv
-from rko.pipeline import preprocess
-from utils.logging import get_logger
-
 from experiments._shared.utils import (
-    compute_ari,
-    compute_msi,
     load_features,
     load_manifest,
     load_mds,
-    load_stored_labels,
     seed_run,
 )
+from RKO import RKO
+from rko.environment import ClustGradeEnv
+from rko.pipeline import preprocess
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -81,9 +77,18 @@ MSI_SPACE: str = _BEST_CONFIG["msi_space"]
 
 # Cluster coloring (same palette as Exp 03/04).
 VIBRANT_CLUSTER_COLORS = [
-    "#00A6FB", "#F7B801", "#06D6A0", "#8338EC", "#FF9F1C",
-    "#118AB2", "#3A86FF", "#FB5607", "#2EC4B6", "#9B5DE5",
-    "#80ED99", "#E9C46A",
+    "#00A6FB",
+    "#F7B801",
+    "#06D6A0",
+    "#8338EC",
+    "#FF9F1C",
+    "#118AB2",
+    "#3A86FF",
+    "#FB5607",
+    "#2EC4B6",
+    "#9B5DE5",
+    "#80ED99",
+    "#E9C46A",
 ]
 OUTLIER_COLOR = "#FF1E1E"
 
@@ -91,6 +96,7 @@ OUTLIER_COLOR = "#FF1E1E"
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _fmt(v: float | None) -> str:
     if v is None or pd.isna(v):
@@ -115,8 +121,13 @@ def _scatter_labels(ax: Axes, mds: np.ndarray, labels: np.ndarray, title: str) -
         color = OUTLIER_COLOR if lbl == -1 else color_map[lbl]
         label_text = "noise" if lbl == -1 else f"C{lbl}"
         ax.scatter(
-            mds[mask, 0], mds[mask, 1],
-            c=[color], s=15, alpha=0.7, edgecolors="none", label=label_text,
+            mds[mask, 0],
+            mds[mask, 1],
+            c=[color],
+            s=15,
+            alpha=0.7,
+            edgecolors="none",
+            label=label_text,
         )
     ax.set_title(title, fontsize=9)
     ax.set_xticks([])
@@ -166,8 +177,11 @@ def load_epsilons() -> dict[str, float | None]:
 # Algorithm runners
 # ---------------------------------------------------------------------------
 
+
 def _run_rko(
-    features: np.ndarray, seed: int, dataset_id: str,
+    features: np.ndarray,
+    seed: int,
+    dataset_id: str,
 ) -> dict[str, Any]:
     """Run clustgrade-rko and return labels."""
     scaled_mds, ppp = preprocess(features)
@@ -175,7 +189,9 @@ def _run_rko(
     seed_run(seed)
 
     env = ClustGradeEnv(
-        features, ppp, scaled_mds,
+        features,
+        ppp,
+        scaled_mds,
         instance_name=dataset_id,
         max_time=RKO_TIME_BUDGET,
         msi_space=MSI_SPACE,
@@ -211,6 +227,7 @@ def _run_dbscan(mds: np.ndarray, eps: float) -> dict[str, Any]:
 # Context / caching
 # ---------------------------------------------------------------------------
 
+
 def _build_context() -> dict[str, Any]:
     manifest = load_manifest()
     epsilons = load_epsilons()
@@ -238,13 +255,18 @@ def _get_scaled_mds(dataset_id: str, group: str, context: dict[str, Any]) -> np.
     key = (dataset_id, group)
     if key not in cache:
         from sklearn.preprocessing import MinMaxScaler
+
         raw = load_mds(dataset_id, group)
         cache[key] = MinMaxScaler().fit_transform(raw)
     return cache[key]
 
 
 def _get_labels(
-    dataset_id: str, group: str, algo: str, seed: int, context: dict[str, Any],
+    dataset_id: str,
+    group: str,
+    algo: str,
+    seed: int,
+    context: dict[str, Any],
 ) -> np.ndarray | None:
     cache: dict[tuple[str, str, str, int], np.ndarray | None] = context["labels_cache"]
     key = (dataset_id, group, algo, seed)
@@ -272,6 +294,7 @@ def _get_labels(
 # ---------------------------------------------------------------------------
 # Panel rendering
 # ---------------------------------------------------------------------------
+
 
 def _scatter_ranked_instances(
     records: pd.DataFrame,
@@ -317,6 +340,7 @@ def _scatter_ranked_instances(
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     print("Generating Experiment 03 comparison plots (RKO vs DBSCAN-DistK) ...")
 
@@ -329,14 +353,18 @@ def main() -> None:
     msi_rko_wins = msi_rko_wins.reset_index(drop=True)
 
     _scatter_ranked_instances(
-        msi_rko_wins, "ClustGrade-RKO",
+        msi_rko_wins,
+        "ClustGrade-RKO",
         "Experiment 03: Top 5 margins where RKO outperforms DBSCAN-DistK (MSI)",
-        "plot-01-rko-top5-msi.png", context,
+        "plot-01-rko-top5-msi.png",
+        context,
     )
     _scatter_ranked_instances(
-        msi_rko_wins, "DBSCAN-DistK",
+        msi_rko_wins,
+        "DBSCAN-DistK",
         "Experiment 03: DBSCAN-DistK on same datasets (comparison)",
-        "plot-02-dbscan-top5-msi.png", context,
+        "plot-02-dbscan-top5-msi.png",
+        context,
     )
 
     # --- Top-5 datasets where DBSCAN-DistK outperforms RKO (MSI) ---
@@ -344,14 +372,18 @@ def main() -> None:
     msi_db_wins = msi_db_wins.reset_index(drop=True)
 
     _scatter_ranked_instances(
-        msi_db_wins, "DBSCAN-DistK",
+        msi_db_wins,
+        "DBSCAN-DistK",
         "Experiment 03: Top 5 margins where DBSCAN-DistK outperforms RKO (MSI)",
-        "plot-05-dbscan-top5-msi.png", context,
+        "plot-05-dbscan-top5-msi.png",
+        context,
     )
     _scatter_ranked_instances(
-        msi_db_wins, "ClustGrade-RKO",
+        msi_db_wins,
+        "ClustGrade-RKO",
         "Experiment 03: RKO on same datasets (comparison)",
-        "plot-06-rko-top5-msi-loss.png", context,
+        "plot-06-rko-top5-msi-loss.png",
+        context,
     )
 
     # --- Top-5 datasets where RKO outperforms DBSCAN-DistK (ARI, CLASSF) ---
@@ -362,14 +394,18 @@ def main() -> None:
         ari_rko_wins = ari_rko_wins.reset_index(drop=True)
 
         _scatter_ranked_instances(
-            ari_rko_wins, "ClustGrade-RKO",
+            ari_rko_wins,
+            "ClustGrade-RKO",
             "Experiment 03: Top 5 margins where RKO outperforms DBSCAN-DistK (ARI, CLASSF)",
-            "plot-03-rko-top5-ari.png", context,
+            "plot-03-rko-top5-ari.png",
+            context,
         )
         _scatter_ranked_instances(
-            ari_rko_wins, "DBSCAN-DistK",
+            ari_rko_wins,
+            "DBSCAN-DistK",
             "Experiment 03: DBSCAN-DistK on same datasets (comparison)",
-            "plot-04-dbscan-top5-ari.png", context,
+            "plot-04-dbscan-top5-ari.png",
+            context,
         )
 
     print("Done.")

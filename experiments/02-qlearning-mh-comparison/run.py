@@ -17,6 +17,7 @@ Output:
 Usage:
     poetry run python -m experiments.02-qlearning-mh-comparison.run
 """
+
 from __future__ import annotations
 
 import json
@@ -34,12 +35,6 @@ for p in [str(_SRC), str(_RKO_FW), str(_ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from RKO import RKO
-
-from rko.environment import ClustGradeEnv
-from rko.pipeline import preprocess
-from utils.logging import get_logger
-
 from experiments._shared.utils import (
     compute_ari,
     compute_msi,
@@ -50,6 +45,10 @@ from experiments._shared.utils import (
     manifest_subset20,
     seed_run,
 )
+from RKO import RKO
+from rko.environment import ClustGradeEnv
+from rko.pipeline import preprocess
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -82,7 +81,9 @@ def run_rko_ql(
     seed_run(seed)
 
     env = ClustGradeEnv(
-        features, ppp, scaled_mds,
+        features,
+        ppp,
+        scaled_mds,
         instance_name=dataset_id,
         max_time=TIME_BUDGET,
         msi_space=MSI_SPACE,
@@ -144,9 +145,15 @@ def main() -> None:
     manifest = load_manifest()
     subset = manifest_subset20(manifest)
 
-    logger.info("Experiment 02: Q-learning impact on %d datasets, %d seeds, %ds budget "
-                "(base config: quadrat_filter=%s, msi_space=%s)",
-                len(subset), N_SEEDS, TIME_BUDGET, QUADRAT_FILTER, MSI_SPACE)
+    logger.info(
+        "Experiment 02: Q-learning impact on %d datasets, %d seeds, %ds budget "
+        "(base config: quadrat_filter=%s, msi_space=%s)",
+        len(subset),
+        N_SEEDS,
+        TIME_BUDGET,
+        QUADRAT_FILTER,
+        MSI_SPACE,
+    )
 
     existing_df, done_datasets = _load_checkpoint()
     records: list[dict] = list(existing_df.to_dict("records")) if len(existing_df) > 0 else []
@@ -158,7 +165,13 @@ def main() -> None:
         group: str = row["group"]
 
         if dataset_id in done_datasets:
-            logger.info("=== [%d/%d] %s [%s] === SKIPPED (checkpoint)", idx + 1, len(subset), dataset_id, group)
+            logger.info(
+                "=== [%d/%d] %s [%s] === SKIPPED (checkpoint)",
+                idx + 1,
+                len(subset),
+                dataset_id,
+                group,
+            )
             continue
 
         logger.info("=== [%d/%d] %s [%s] ===", idx + 1, len(subset), dataset_id, group)
@@ -176,21 +189,41 @@ def main() -> None:
             for seed in range(N_SEEDS):
                 try:
                     rec = run_rko_ql(
-                        dataset_id, group, features, scaled_mds, ppp, mds,
-                        true_labels, seed, ql,
+                        dataset_id,
+                        group,
+                        features,
+                        scaled_mds,
+                        ppp,
+                        mds,
+                        true_labels,
+                        seed,
+                        ql,
                     )
                     records.append(rec)
-                    logger.info("  %s seed=%d K=%d MSI=%s evals=%d",
-                                ql_label, seed, rec["k"],
-                                f"{rec['msi']:.4f}" if rec["msi"] is not None else "N/A",
-                                rec["eval_count"])
+                    logger.info(
+                        "  %s seed=%d K=%d MSI=%s evals=%d",
+                        ql_label,
+                        seed,
+                        rec["k"],
+                        f"{rec['msi']:.4f}" if rec["msi"] is not None else "N/A",
+                        rec["eval_count"],
+                    )
                 except Exception as exc:  # noqa: BLE001
                     logger.error("  %s seed=%d FAILED: %s", ql_label, seed, exc)
-                    records.append({
-                        "dataset_id": dataset_id, "group": group, "q_learning": ql,
-                        "seed": seed, "k": None, "msi": None, "ari": None,
-                        "internal_cost": None, "eval_count": None, "cache_hits": None,
-                    })
+                    records.append(
+                        {
+                            "dataset_id": dataset_id,
+                            "group": group,
+                            "q_learning": ql,
+                            "seed": seed,
+                            "k": None,
+                            "msi": None,
+                            "ari": None,
+                            "internal_cost": None,
+                            "eval_count": None,
+                            "cache_hits": None,
+                        }
+                    )
 
         # Checkpoint: save after each dataset completes.
         df = pd.DataFrame(records)

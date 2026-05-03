@@ -1,4 +1,5 @@
 """Shared helpers for Experiment 01 sensitivity solution plots."""
+
 from __future__ import annotations
 
 import random
@@ -8,9 +9,9 @@ from pathlib import Path
 from typing import Any, Literal
 
 import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
+from matplotlib.axes import Axes
 
 _ROOT = Path(__file__).parents[2]
 _SRC = _ROOT / "src"
@@ -20,14 +21,12 @@ for p in [str(_SRC), str(_RKO_FW), str(_ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
+from experiments._shared.utils import load_features, load_manifest, seed_run
 from RKO import RKO
-
 from rko.environment import ClustGradeEnv
 from rko.pipeline import preprocess
 from spatial.point_pattern import PointPattern
 from utils.logging import get_logger
-
-from experiments._shared.utils import load_features, load_manifest, seed_run
 
 logger = get_logger(__name__)
 
@@ -97,7 +96,11 @@ def _config_rank(config_name: str) -> int:
 
 
 def _config_name(quadrat_filter: Any, msi_space: Any) -> str:
-    qf_bool = quadrat_filter if isinstance(quadrat_filter, bool) else str(quadrat_filter).lower() == "true"
+    qf_bool = (
+        quadrat_filter
+        if isinstance(quadrat_filter, bool)
+        else str(quadrat_filter).lower() == "true"
+    )
     qf = "QF" if qf_bool else "noQF"
     return f"{qf}+{str(msi_space).upper()}"
 
@@ -340,8 +343,12 @@ def run_and_plot_selection(selection: SensitivitySelection, out_name: str) -> No
     features = load_features(dataset_row)
     scaled_mds, ppp = preprocess(features)
 
-    max_seed = pick_representative_seed(raw_runs, selection.dataset_id, selection.max_config.name, selection.metric)
-    min_seed = pick_representative_seed(raw_runs, selection.dataset_id, selection.min_config.name, selection.metric)
+    max_seed = pick_representative_seed(
+        raw_runs, selection.dataset_id, selection.max_config.name, selection.metric
+    )
+    min_seed = pick_representative_seed(
+        raw_runs, selection.dataset_id, selection.min_config.name, selection.metric
+    )
 
     logger.info(
         "%s: %s seed=%d vs %s seed=%d",

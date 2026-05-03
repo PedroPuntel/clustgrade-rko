@@ -12,6 +12,7 @@ Reads raw_runs.csv and produces:
 Usage:
     poetry run python -m experiments.01-param-study.aggregate
 """
+
 from __future__ import annotations
 
 import itertools
@@ -47,11 +48,15 @@ def config_label(row: pd.Series) -> str:
 
 def compute_per_dataset_medians(df: pd.DataFrame) -> pd.DataFrame:
     """Per-dataset median MSI/ARI/K grouped by config."""
-    grouped = df.groupby(["dataset_id", "group", "quadrat_filter", "msi_space"]).agg(
-        msi_median=("msi", "median"),
-        ari_median=("ari", "median"),
-        k_median=("k", "median"),
-    ).reset_index()
+    grouped = (
+        df.groupby(["dataset_id", "group", "quadrat_filter", "msi_space"])
+        .agg(
+            msi_median=("msi", "median"),
+            ari_median=("ari", "median"),
+            k_median=("k", "median"),
+        )
+        .reset_index()
+    )
     grouped["config"] = grouped.apply(config_label, axis=1)
     return grouped
 
@@ -73,23 +78,29 @@ def pairwise_win_loss(medians: pd.DataFrame, metric: str, tol: float = 0.01) -> 
         d2 = medians[medians["config"] == c2][["dataset_id", col]].set_index("dataset_id")
         joined = d1.join(d2, lsuffix="_1", rsuffix="_2", how="inner").dropna()
         delta = joined[f"{col}_2"] - joined[f"{col}_1"]
-        rows.append({
-            "config_a": c1, "config_b": c2,
-            "metric": metric,
-            "a_wins": int((delta < -tol).sum()),
-            "b_wins": int((delta > tol).sum()),
-            "ties": int(((delta >= -tol) & (delta <= tol)).sum()),
-            "total": len(delta),
-        })
+        rows.append(
+            {
+                "config_a": c1,
+                "config_b": c2,
+                "metric": metric,
+                "a_wins": int((delta < -tol).sum()),
+                "b_wins": int((delta > tol).sum()),
+                "ties": int(((delta >= -tol) & (delta <= tol)).sum()),
+                "total": len(delta),
+            }
+        )
     return pd.DataFrame(rows)
 
 
 def overall_ranking(medians: pd.DataFrame, metric: str) -> pd.DataFrame:
     """Rank configs by overall median of per-dataset medians."""
     col = f"{metric}_median"
-    ranking = medians.groupby("config")[col].agg(
-        ["median", "mean", "std", "count"]
-    ).sort_values("median", ascending=False).reset_index()
+    ranking = (
+        medians.groupby("config")[col]
+        .agg(["median", "mean", "std", "count"])
+        .sort_values("median", ascending=False)
+        .reset_index()
+    )
     ranking.columns = ["config", "median", "mean", "std", "n_datasets"]
     return ranking
 
@@ -136,45 +147,65 @@ def friedman_posthoc(medians: pd.DataFrame, metric: str) -> pd.DataFrame:
 
     # Pivot to (dataset, config) wide form, drop datasets missing any config.
     wide = medians.pivot_table(
-        index="dataset_id", columns="config", values=col, aggfunc="first",
+        index="dataset_id",
+        columns="config",
+        values=col,
+        aggfunc="first",
     )[configs].dropna()
 
     if len(wide) < 2:
         logger.warning(
             "  Friedman (%s): only %d complete datasets — skipping test.",
-            metric, len(wide),
+            metric,
+            len(wide),
         )
-        return pd.DataFrame(columns=[
-            "test", "config_a", "config_b", "statistic", "p_value",
-            "p_holm", "significant", "n_datasets",
-        ])
+        return pd.DataFrame(
+            columns=[
+                "test",
+                "config_a",
+                "config_b",
+                "statistic",
+                "p_value",
+                "p_holm",
+                "significant",
+                "n_datasets",
+            ]
+        )
 
     # --- Omnibus Friedman test ---
     friedman_stat, friedman_p = stats.friedmanchisquare(*[wide[c].values for c in configs])
     friedman_sig = friedman_p < ALPHA
 
-    rows = [{
-        "test": "friedman",
-        "config_a": "",
-        "config_b": "",
-        "statistic": float(friedman_stat),
-        "p_value": float(friedman_p),
-        "p_holm": float(friedman_p),  # identity for the omnibus row
-        "significant": bool(friedman_sig),
-        "n_datasets": int(len(wide)),
-    }]
+    rows = [
+        {
+            "test": "friedman",
+            "config_a": "",
+            "config_b": "",
+            "statistic": float(friedman_stat),
+            "p_value": float(friedman_p),
+            "p_holm": float(friedman_p),  # identity for the omnibus row
+            "significant": bool(friedman_sig),
+            "n_datasets": int(len(wide)),
+        }
+    ]
 
     if not friedman_sig:
         logger.info(
-            "  Friedman (%s): chi2=%.4f, p=%.4f (N=%d) — NOT significant; "
-            "skipping post-hoc.", metric, friedman_stat, friedman_p, len(wide),
+            "  Friedman (%s): chi2=%.4f, p=%.4f (N=%d) — NOT significant; " "skipping post-hoc.",
+            metric,
+            friedman_stat,
+            friedman_p,
+            len(wide),
         )
         return pd.DataFrame(rows)
 
     logger.info(
         "  Friedman (%s): chi2=%.4f, p=%.4f (N=%d) — significant; running "
         "Wilcoxon post-hoc with Holm-Bonferroni.",
-        metric, friedman_stat, friedman_p, len(wide),
+        metric,
+        friedman_stat,
+        friedman_p,
+        len(wide),
     )
 
     # --- Pairwise Wilcoxon ---
@@ -190,12 +221,14 @@ def friedman_posthoc(medians: pd.DataFrame, metric: str) -> pd.DataFrame:
         except ValueError:
             # All differences are zero — degenerate, no signal to test.
             w_stat, w_p = float("nan"), 1.0
-        pairwise.append({
-            "config_a": c1,
-            "config_b": c2,
-            "statistic": float(w_stat),
-            "p_value": float(w_p),
-        })
+        pairwise.append(
+            {
+                "config_a": c1,
+                "config_b": c2,
+                "statistic": float(w_stat),
+                "p_value": float(w_p),
+            }
+        )
 
     # --- Holm-Bonferroni step-down correction on m=6 ---
     m = len(pairwise)
@@ -212,16 +245,18 @@ def friedman_posthoc(medians: pd.DataFrame, metric: str) -> pd.DataFrame:
         last_p = adjusted
 
     for r in sorted_pairs:
-        rows.append({
-            "test": "wilcoxon_holm",
-            "config_a": r["config_a"],
-            "config_b": r["config_b"],
-            "statistic": r["statistic"],
-            "p_value": r["p_value"],
-            "p_holm": r["p_holm"],
-            "significant": bool(r["p_holm"] < ALPHA),
-            "n_datasets": int(len(wide)),
-        })
+        rows.append(
+            {
+                "test": "wilcoxon_holm",
+                "config_a": r["config_a"],
+                "config_b": r["config_b"],
+                "statistic": r["statistic"],
+                "p_value": r["p_value"],
+                "p_holm": r["p_holm"],
+                "significant": bool(r["p_holm"] < ALPHA),
+                "n_datasets": int(len(wide)),
+            }
+        )
 
     return pd.DataFrame(rows)
 
@@ -245,7 +280,8 @@ def main() -> None:
 
         if metric == "ari":
             ranking_classf = overall_ranking(
-                medians[medians["group"] == "classf"], metric,
+                medians[medians["group"] == "classf"],
+                metric,
             )
             ranking_classf.to_csv(ARTIFACTS / f"ranking_{metric}_classf.csv", index=False)
             ranking = ranking_classf
@@ -267,7 +303,8 @@ def main() -> None:
     # --- Boxplots ---
     plot_boxplots(medians, "msi", ARTIFACTS / "boxplot_msi.png")
     plot_boxplots(
-        medians[medians["group"] == "classf"], "ari",
+        medians[medians["group"] == "classf"],
+        "ari",
         ARTIFACTS / "boxplot_ari_classf.png",
     )
 
@@ -316,9 +353,7 @@ def main() -> None:
     friedman_sig = False
     if stats_frames:
         all_stats = pd.concat(stats_frames, ignore_index=True)
-        friedman_row = all_stats[
-            (all_stats["metric"] == "msi") & (all_stats["test"] == "friedman")
-        ]
+        friedman_row = all_stats[(all_stats["metric"] == "msi") & (all_stats["test"] == "friedman")]
         if not friedman_row.empty:
             friedman_p = float(friedman_row.iloc[0]["p_value"])
             friedman_sig = bool(friedman_row.iloc[0]["significant"])
@@ -338,8 +373,10 @@ def main() -> None:
 
     print(f"\n>>> Best config by median MSI: {best_config}  (median={best_median:.4f})")
     if friedman_p is not None:
-        print(f"    Friedman p (MSI) = {friedman_p:.4f}  "
-              f"{'[significant]' if friedman_sig else '[NOT significant]'}")
+        print(
+            f"    Friedman p (MSI) = {friedman_p:.4f}  "
+            f"{'[significant]' if friedman_sig else '[NOT significant]'}"
+        )
     print("    Consult statistical_tests.csv before promoting to Exp 03.")
 
     logger.info("Aggregation complete.")

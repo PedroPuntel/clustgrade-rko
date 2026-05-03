@@ -26,6 +26,7 @@ Usage:
     # Real run (write reconstructed shard CSVs)
     poetry run python -m experiments.02-qlearning-mh-comparison.recover_failed_run_results
 """
+
 from __future__ import annotations
 
 import argparse
@@ -42,9 +43,8 @@ for p in [str(_SRC), str(_ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from utils.logging import get_logger  # noqa: E402
-
 from experiments._shared.utils import load_manifest  # noqa: E402
+from utils.logging import get_logger  # noqa: E402
 
 logger = get_logger(__name__)
 
@@ -55,15 +55,24 @@ logger = get_logger(__name__)
 # `run_mh_comparison.py::{N_SEEDS, SHARD_COLUMNS, SHARDS_DIR}`.
 N_SEEDS: int = 20
 SHARD_COLUMNS: list[str] = [
-    "dataset_id", "group", "metaheuristic", "seed",
-    "k", "msi", "ari", "internal_cost",
-    "time_to_best", "eval_count", "cache_hits",
+    "dataset_id",
+    "group",
+    "metaheuristic",
+    "seed",
+    "k",
+    "msi",
+    "ari",
+    "internal_cost",
+    "time_to_best",
+    "eval_count",
+    "cache_hits",
 ]
 SHARDS_DIR: Path = Path(__file__).parent / "artifacts" / "mh_comparison" / "_shards"
 
 
 def _shard_path(dataset_id: str, metaheuristic: str) -> Path:
     return SHARDS_DIR / f"run_{dataset_id}_{metaheuristic}.csv"
+
 
 # ---------------------------------------------------------------------------
 # Log parsing
@@ -106,15 +115,17 @@ def parse_log(log_path: Path) -> list[dict]:
             if seed in seen_seeds:
                 continue
             seen_seeds.add(seed)
-            records.append({
-                "dataset_id": m.group("dataset"),
-                "metaheuristic": m.group("mh"),
-                "seed": seed,
-                "k": int(m.group("k")),
-                "msi": _parse_float_or_nan(m.group("msi")),
-                "ari": _parse_float_or_nan(m.group("ari")),
-                "eval_count": int(m.group("evals")),
-            })
+            records.append(
+                {
+                    "dataset_id": m.group("dataset"),
+                    "metaheuristic": m.group("mh"),
+                    "seed": seed,
+                    "k": int(m.group("k")),
+                    "msi": _parse_float_or_nan(m.group("msi")),
+                    "ari": _parse_float_or_nan(m.group("ari")),
+                    "eval_count": int(m.group("evals")),
+                }
+            )
 
     return records
 
@@ -122,6 +133,7 @@ def parse_log(log_path: Path) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Recovery
 # ---------------------------------------------------------------------------
+
 
 def _existing_row_count(csv_path: Path) -> int:
     if not csv_path.exists():
@@ -200,6 +212,7 @@ def recover_shard(
 # Main
 # ---------------------------------------------------------------------------
 
+
 def _print_summary_table(summaries: list[dict]) -> None:
     """Pretty-print a per-shard summary; mirrors the style of aggregate console output."""
     if not summaries:
@@ -253,7 +266,9 @@ def main() -> None:
     log_paths = sorted(SHARDS_DIR.glob("run_*.log"))
     logger.info(
         "Scanning %d shard logs under %s (dry_run=%s)",
-        len(log_paths), SHARDS_DIR, args.dry_run,
+        len(log_paths),
+        SHARDS_DIR,
+        args.dry_run,
     )
 
     summaries: list[dict] = []
@@ -262,7 +277,9 @@ def main() -> None:
         summaries.append(summary)
 
     # Only show actionable entries in the detailed table.
-    actionable = [s for s in summaries if s.get("action") in {"write", "dry-run", "skip-empty", "skip-worse"}]
+    actionable = [
+        s for s in summaries if s.get("action") in {"write", "dry-run", "skip-empty", "skip-worse"}
+    ]
     _print_summary_table(actionable)
     _print_totals(summaries)
 

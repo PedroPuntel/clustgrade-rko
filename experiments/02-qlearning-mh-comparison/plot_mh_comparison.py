@@ -19,6 +19,7 @@ Style:
 Usage:
     poetry run python -m experiments.02-qlearning-mh-comparison.plot_mh_comparison
 """
+
 from __future__ import annotations
 
 import argparse
@@ -48,29 +49,33 @@ def _apply_smoke_overrides() -> None:
     ARTIFACTS = _SMOKE_ARTIFACTS
     RAW_RUNS_PATH = ARTIFACTS / "raw_runs.csv"
 
+
 METAHEURISTICS: list[str] = ["brkga", "vns", "ils"]
 MH_LABELS: dict[str, str] = {"brkga": "BRKGA", "vns": "VNS", "ils": "ILS"}
 MH_COLORS: dict[str, str] = {"brkga": "#4C72B0", "vns": "#DD8452", "ils": "#55A868"}
 
-plt.rcParams.update({
-    "font.family": "serif",
-    "font.size": 10,
-    "axes.titlesize": 11,
-    "axes.labelsize": 10,
-    "xtick.labelsize": 9,
-    "ytick.labelsize": 9,
-    "legend.fontsize": 9,
-    "axes.grid": True,
-    "grid.alpha": 0.25,
-    "grid.linewidth": 0.5,
-    "savefig.dpi": 300,
-    "savefig.bbox": "tight",
-})
+plt.rcParams.update(
+    {
+        "font.family": "serif",
+        "font.size": 10,
+        "axes.titlesize": 11,
+        "axes.labelsize": 10,
+        "xtick.labelsize": 9,
+        "ytick.labelsize": 9,
+        "legend.fontsize": 9,
+        "axes.grid": True,
+        "grid.alpha": 0.25,
+        "grid.linewidth": 0.5,
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # Loaders
 # ---------------------------------------------------------------------------
+
 
 def _load_raw() -> pd.DataFrame:
     if not RAW_RUNS_PATH.exists():
@@ -81,6 +86,7 @@ def _load_raw() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Boxplots (per-run distributions)
 # ---------------------------------------------------------------------------
+
 
 def _boxplot(
     values_by_mh: dict[str, np.ndarray],
@@ -93,7 +99,10 @@ def _boxplot(
     labels = [MH_LABELS[mh] for mh in METAHEURISTICS]
 
     bp = ax.boxplot(
-        data, labels=labels, patch_artist=True, showfliers=True,
+        data,
+        labels=labels,
+        patch_artist=True,
+        showfliers=True,
         flierprops=dict(marker="o", markerfacecolor="gray", markersize=3, alpha=0.4),
         medianprops=dict(color="black", linewidth=1.3),
     )
@@ -117,8 +126,13 @@ def _boxplot(
 # Rainclouds (half-violin + box + jitter)
 # ---------------------------------------------------------------------------
 
+
 def _half_violin(
-    ax: Axes, data: np.ndarray, center: float, color: str, width: float = 0.4,
+    ax: Axes,
+    data: np.ndarray,
+    center: float,
+    color: str,
+    width: float = 0.4,
 ) -> None:
     data = data[~np.isnan(data)]
     if len(data) < 3:
@@ -151,7 +165,11 @@ def _raincloud(
 
         clean = vals[~np.isnan(vals)]
         ax.boxplot(
-            clean, positions=[center], widths=0.12, vert=True, patch_artist=True,
+            clean,
+            positions=[center],
+            widths=0.12,
+            vert=True,
+            patch_artist=True,
             showfliers=False,
             medianprops=dict(color="white", linewidth=1.5),
             boxprops=dict(facecolor=color, edgecolor=color, alpha=0.85),
@@ -161,8 +179,13 @@ def _raincloud(
 
         jitter = rng.uniform(0.05, 0.28, size=len(clean))
         ax.scatter(
-            center + jitter, clean, s=10, alpha=0.4, color=color,
-            edgecolors="none", zorder=3,
+            center + jitter,
+            clean,
+            s=10,
+            alpha=0.4,
+            color=color,
+            edgecolors="none",
+            zorder=3,
         )
 
     # Mean +/- std annotations.
@@ -171,7 +194,9 @@ def _raincloud(
         vals = values_by_mh.get(mh, np.array([]))
         clean = vals[~np.isnan(vals)] if len(vals) else vals
         if len(clean) >= 2:
-            labels.append(f"{MH_LABELS[mh]}\n(m\u00e9dia={clean.mean():.3f} \u00b1 {clean.std(ddof=1):.3f})")
+            labels.append(
+                f"{MH_LABELS[mh]}\n(m\u00e9dia={clean.mean():.3f} \u00b1 {clean.std(ddof=1):.3f})"
+            )
         elif len(clean) == 1:
             labels.append(f"{MH_LABELS[mh]}\n(m\u00e9dia={clean[0]:.3f})")
         else:
@@ -217,17 +242,18 @@ def _write_raincloud_pair_latex(out_path: Path) -> None:
 # Overall mean MSI bar plot (one bar per MH)
 # ---------------------------------------------------------------------------
 
+
 def _overall_mean_msi_barplot(raw: pd.DataFrame, out_path: Path) -> None:
     """Simple bar chart of overall mean ISM per metaheuristic.
 
     Overall mean = grand mean across datasets of per-(dataset, MH) mean MSI,
     so each dataset contributes equally regardless of how many runs it has.
     """
-    per_ds_means = (
-        raw.groupby(["dataset_id", "metaheuristic"])["msi"].mean().reset_index()
-    )
+    per_ds_means = raw.groupby(["dataset_id", "metaheuristic"])["msi"].mean().reset_index()
     wide = per_ds_means.pivot_table(
-        index="dataset_id", columns="metaheuristic", values="msi",
+        index="dataset_id",
+        columns="metaheuristic",
+        values="msi",
     )
     wide.columns.name = None
 
@@ -242,14 +268,23 @@ def _overall_mean_msi_barplot(raw: pd.DataFrame, out_path: Path) -> None:
     x = np.arange(len(cols))
     colors = [MH_COLORS[mh] for mh in cols]
     bars = ax.bar(
-        x, means.values, color=colors, edgecolor="black", linewidth=0.5, alpha=0.9,
+        x,
+        means.values,
+        color=colors,
+        edgecolor="black",
+        linewidth=0.5,
+        alpha=0.9,
     )
     for bar, v in zip(bars, means.values):
         if np.isnan(v):
             continue
         ax.text(
-            bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.005,
-            f"{v:.3f}", ha="center", va="bottom", fontsize=9,
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.005,
+            f"{v:.3f}",
+            ha="center",
+            va="bottom",
+            fontsize=9,
         )
 
     ax.set_xticks(x)
@@ -270,6 +305,7 @@ def _overall_mean_msi_barplot(raw: pd.DataFrame, out_path: Path) -> None:
 # Sorted mean MSI bar plot (reviewer request #2)
 # ---------------------------------------------------------------------------
 
+
 def _sorted_mean_msi_barplot(raw: pd.DataFrame, out_path: Path) -> None:
     """Grouped bar chart of per-dataset mean MSI per MH, sorted by best MH desc.
 
@@ -277,12 +313,11 @@ def _sorted_mean_msi_barplot(raw: pd.DataFrame, out_path: Path) -> None:
     max(mean_brkga, mean_vns, mean_ils) descending. x-tick labels color-coded
     by group: black (CLUST), navy (CLASSF).
     """
-    means_long = (
-        raw.groupby(["dataset_id", "group", "metaheuristic"])["msi"]
-           .mean().reset_index()
-    )
+    means_long = raw.groupby(["dataset_id", "group", "metaheuristic"])["msi"].mean().reset_index()
     wide = means_long.pivot_table(
-        index=["dataset_id", "group"], columns="metaheuristic", values="msi",
+        index=["dataset_id", "group"],
+        columns="metaheuristic",
+        values="msi",
     ).reset_index()
     wide.columns.name = None
 
@@ -307,9 +342,14 @@ def _sorted_mean_msi_barplot(raw: pd.DataFrame, out_path: Path) -> None:
     fig, ax = plt.subplots(figsize=(max(10.0, 0.22 * n_ds), 5.5))
     for i, mh in enumerate(matrix_cols):
         ax.bar(
-            x + (i - 1) * width, matrix[:, i], width=width,
-            color=MH_COLORS[mh], label=MH_LABELS[mh], alpha=0.85,
-            edgecolor="black", linewidth=0.3,
+            x + (i - 1) * width,
+            matrix[:, i],
+            width=width,
+            color=MH_COLORS[mh],
+            label=MH_LABELS[mh],
+            alpha=0.85,
+            edgecolor="black",
+            linewidth=0.3,
         )
 
     ax.axhline(0, color="black", linewidth=0.8)
@@ -337,6 +377,7 @@ def _sorted_mean_msi_barplot(raw: pd.DataFrame, out_path: Path) -> None:
 # Data extraction helpers
 # ---------------------------------------------------------------------------
 
+
 def _extract_per_run(df: pd.DataFrame, metric: str) -> dict[str, np.ndarray]:
     out: dict[str, np.ndarray] = {}
     for mh in METAHEURISTICS:
@@ -349,10 +390,12 @@ def _extract_per_run(df: pd.DataFrame, metric: str) -> dict[str, np.ndarray]:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--smoke", action="store_true",
+        "--smoke",
+        action="store_true",
         help="Read from the smoke-mode artifacts folder (artifacts/mh_comparison_smoke/).",
     )
     args = parser.parse_args()
@@ -367,23 +410,27 @@ def main() -> None:
     ari_values = _extract_per_run(raw[raw["group"] == "classf"], "ari")
 
     _boxplot(
-        msi_values, "ISM (por execu\u00e7\u00e3o)",
+        msi_values,
+        "ISM (por execu\u00e7\u00e3o)",
         "Figura XX \u2014 Distribui\u00e7\u00e3o do ISM por Metaheur\u00edstica",
         ARTIFACTS / "boxplot_msi.png",
     )
     _boxplot(
-        ari_values, "IRA (por execu\u00e7\u00e3o)",
+        ari_values,
+        "IRA (por execu\u00e7\u00e3o)",
         "Figura XX \u2014 Distribui\u00e7\u00e3o do ARI por Metaheur\u00edstica (CLASSF)",
         ARTIFACTS / "boxplot_ari_classf.png",
     )
 
     _raincloud(
-        msi_values, "ISM (por execu\u00e7\u00e3o)",
+        msi_values,
+        "ISM (por execu\u00e7\u00e3o)",
         "M\u00e9trica ISM",
         ARTIFACTS / "raincloud_msi.png",
     )
     _raincloud(
-        ari_values, "IRA (por execu\u00e7\u00e3o)",
+        ari_values,
+        "IRA (por execu\u00e7\u00e3o)",
         "M\u00e9trica - IRA",
         ARTIFACTS / "raincloud_ari_classf.png",
     )

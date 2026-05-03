@@ -54,6 +54,7 @@ Usage:
     # Sequential (for debugging)
     poetry run python -m experiments.02-qlearning-mh-comparison.run_mh_comparison --sequential
 """
+
 from __future__ import annotations
 
 import argparse
@@ -75,12 +76,6 @@ for p in [str(_SRC), str(_RKO_FW), str(_ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from RKO import RKO  # noqa: E402
-
-from rko.environment import ClustGradeEnv  # noqa: E402
-from rko.pipeline import preprocess  # noqa: E402
-from utils.logging import get_logger  # noqa: E402
-
 from experiments._shared.utils import (  # noqa: E402
     compute_ari,
     compute_msi,
@@ -89,6 +84,10 @@ from experiments._shared.utils import (  # noqa: E402
     load_stored_labels,
     seed_run,
 )
+from RKO import RKO  # noqa: E402
+from rko.environment import ClustGradeEnv  # noqa: E402
+from rko.pipeline import preprocess  # noqa: E402
+from utils.logging import get_logger  # noqa: E402
 
 logger = get_logger(__name__)
 
@@ -115,10 +114,19 @@ _SMOKE_N_DATASETS: int = 2
 _SMOKE_ARTIFACTS = Path(__file__).parent / "artifacts" / "mh_comparison_smoke"
 
 SHARD_COLUMNS: list[str] = [
-    "dataset_id", "group", "metaheuristic", "seed",
-    "k", "msi", "ari", "internal_cost",
-    "time_to_best", "eval_count", "cache_hits",
+    "dataset_id",
+    "group",
+    "metaheuristic",
+    "seed",
+    "k",
+    "msi",
+    "ari",
+    "internal_cost",
+    "time_to_best",
+    "eval_count",
+    "cache_hits",
 ]
+
 
 def _apply_smoke_overrides() -> None:
     """Swap runtime constants to the smoke-test profile.
@@ -137,19 +145,20 @@ def _apply_smoke_overrides() -> None:
 
 
 # Inherit RKO base config from Exp 01.
-_BEST_CONFIG_PATH = (
-    Path(__file__).parents[1] / "01-param-study" / "artifacts" / "best_config.json"
-)
+_BEST_CONFIG_PATH = Path(__file__).parents[1] / "01-param-study" / "artifacts" / "best_config.json"
 with open(_BEST_CONFIG_PATH) as f:
     _BEST_CONFIG = json.load(f)
 QUADRAT_FILTER: bool = _BEST_CONFIG["quadrat_filter"]
 MSI_SPACE: str = _BEST_CONFIG["msi_space"]
 
-Q_LEARNING: bool = True  # fixed to True per article co-author request, even if Exp 02's verdict differs
+Q_LEARNING: bool = (
+    True  # fixed to True per article co-author request, even if Exp 02's verdict differs
+)
 
 # ---------------------------------------------------------------------------
 # Core RKO runner (single seed, single metaheuristic)
 # ---------------------------------------------------------------------------
+
 
 def run_rko_single_mh(
     dataset_id: str,
@@ -173,7 +182,9 @@ def run_rko_single_mh(
     seed_run(seed)
 
     env = ClustGradeEnv(
-        features, ppp, scaled_mds,
+        features,
+        ppp,
+        scaled_mds,
         instance_name=dataset_id,
         max_time=TIME_BUDGET,
         msi_space=MSI_SPACE,
@@ -221,6 +232,7 @@ def run_rko_single_mh(
 # Shard mode: run all N_SEEDS for one (dataset, metaheuristic) and save CSV
 # ---------------------------------------------------------------------------
 
+
 def _shard_path(dataset_id: str, metaheuristic: str) -> Path:
     return SHARDS_DIR / f"run_{dataset_id}_{metaheuristic}.csv"
 
@@ -257,7 +269,7 @@ def _load_existing_shard(out_path: Path) -> tuple[pd.DataFrame, set[int]]:
     completed_mask = df["k"].notna()
     complete_rows = df.loc[completed_mask].copy()
     completed_seeds: set[int] = set(complete_rows["seed"].astype(int).tolist())
-    
+
     # Enforce the canonical schema; missing columns (e.g., when resuming from
     # a log-recovered CSV) come out as NaN, which downstream aggregators ignore.
     for col in SHARD_COLUMNS:
@@ -284,7 +296,11 @@ def run_shard(dataset_id: str, metaheuristic: str) -> pd.DataFrame:
 
     logger.info(
         "[%s/%s] resume: %d/%d seeds already present; running %d missing: %s",
-        dataset_id, metaheuristic, len(completed_seeds), N_SEEDS, len(missing),
+        dataset_id,
+        metaheuristic,
+        len(completed_seeds),
+        N_SEEDS,
+        len(missing),
         missing if len(missing) <= 20 else f"{missing[:5]}...",
     )
 
@@ -307,26 +323,43 @@ def run_shard(dataset_id: str, metaheuristic: str) -> pd.DataFrame:
     for seed in missing:
         try:
             rec = run_rko_single_mh(
-                dataset_id, group, features, scaled_mds, ppp,
-                true_labels, seed, metaheuristic,
+                dataset_id,
+                group,
+                features,
+                scaled_mds,
+                ppp,
+                true_labels,
+                seed,
+                metaheuristic,
             )
             new_records.append(rec)
             logger.info(
                 "  [%s/%s] seed=%d K=%s MSI=%s ARI=%s evals=%s",
-                dataset_id, metaheuristic, seed, rec["k"],
+                dataset_id,
+                metaheuristic,
+                seed,
+                rec["k"],
                 f"{rec['msi']:.4f}" if rec["msi"] is not None else "N/A",
                 f"{rec['ari']:.4f}" if rec["ari"] is not None else "N/A",
                 rec["eval_count"],
             )
         except Exception as exc:  # noqa: BLE001
             logger.error("  [%s/%s] seed=%d FAILED: %s", dataset_id, metaheuristic, seed, exc)
-            new_records.append({
-                "dataset_id": dataset_id, "group": group,
-                "metaheuristic": metaheuristic, "seed": seed,
-                "k": None, "msi": None, "ari": None,
-                "internal_cost": None, "time_to_best": None,
-                "eval_count": None, "cache_hits": None,
-            })
+            new_records.append(
+                {
+                    "dataset_id": dataset_id,
+                    "group": group,
+                    "metaheuristic": metaheuristic,
+                    "seed": seed,
+                    "k": None,
+                    "msi": None,
+                    "ari": None,
+                    "internal_cost": None,
+                    "time_to_best": None,
+                    "eval_count": None,
+                    "cache_hits": None,
+                }
+            )
 
     new_df = pd.DataFrame(new_records, columns=SHARD_COLUMNS)
     merged = pd.concat([existing_rows, new_df], ignore_index=True)
@@ -338,6 +371,7 @@ def run_shard(dataset_id: str, metaheuristic: str) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Subprocess dispatch (coordinator-side)
 # ---------------------------------------------------------------------------
+
 
 def _run_shard_subprocess(dataset_id: str, metaheuristic: str) -> pd.DataFrame | None:
     """Dispatch a single shard to a fresh Python subprocess; return its shard DataFrame.
@@ -351,9 +385,12 @@ def _run_shard_subprocess(dataset_id: str, metaheuristic: str) -> pd.DataFrame |
     out_path = _shard_path(dataset_id, metaheuristic)
 
     cmd = [
-        sys.executable, "-m",
+        sys.executable,
+        "-m",
         "experiments.02-qlearning-mh-comparison.run_mh_comparison",
-        "--shard", dataset_id, metaheuristic,
+        "--shard",
+        dataset_id,
+        metaheuristic,
     ]
     # Propagate smoke mode so the worker applies the same overrides and writes
     # to the smoke artifacts folder.
@@ -368,13 +405,20 @@ def _run_shard_subprocess(dataset_id: str, metaheuristic: str) -> pd.DataFrame |
         with open(log_path, "w", encoding="utf-8") as log_file:
             proc = subprocess.run(
                 cmd,
-                stdout=log_file, stderr=subprocess.STDOUT,
-                env=env, timeout=timeout,
+                stdout=log_file,
+                stderr=subprocess.STDOUT,
+                env=env,
+                timeout=timeout,
                 cwd=str(_ROOT),
             )
         if proc.returncode != 0:
-            logger.error("[%s/%s] subprocess FAILED (rc=%d); see %s",
-                         dataset_id, metaheuristic, proc.returncode, log_path.name)
+            logger.error(
+                "[%s/%s] subprocess FAILED (rc=%d); see %s",
+                dataset_id,
+                metaheuristic,
+                proc.returncode,
+                log_path.name,
+            )
             return None
     except subprocess.TimeoutExpired:
         logger.error("[%s/%s] subprocess TIMED OUT after %ds", dataset_id, metaheuristic, timeout)
@@ -386,8 +430,13 @@ def _run_shard_subprocess(dataset_id: str, metaheuristic: str) -> pd.DataFrame |
 
     df = pd.read_csv(out_path)
     if len(df) != N_SEEDS:
-        logger.error("[%s/%s] shard CSV has %d rows, expected %d",
-                     dataset_id, metaheuristic, len(df), N_SEEDS)
+        logger.error(
+            "[%s/%s] shard CSV has %d rows, expected %d",
+            dataset_id,
+            metaheuristic,
+            len(df),
+            N_SEEDS,
+        )
         return None
     return df
 
@@ -395,6 +444,7 @@ def _run_shard_subprocess(dataset_id: str, metaheuristic: str) -> pd.DataFrame |
 # ---------------------------------------------------------------------------
 # Consolidation (coordinator-only writer to raw_runs.csv)
 # ---------------------------------------------------------------------------
+
 
 def _consolidate_raw_runs() -> pd.DataFrame:
     """Read every complete shard CSV and write the consolidated raw_runs.csv."""
@@ -427,6 +477,7 @@ def _consolidate_raw_runs() -> pd.DataFrame:
 # Coordinator
 # ---------------------------------------------------------------------------
 
+
 def _build_job_list() -> list[tuple[str, str]]:
     manifest = load_manifest()
     if N_DATASETS_LIMIT is not None:
@@ -446,17 +497,17 @@ def _run_coordinator(jobs: list[tuple[str, str]], n_workers: int) -> None:
     already_done = total_shards - len(jobs)
     logger.info(
         "Coordinator: %d/%d shards already complete; dispatching %d with %d workers.",
-        already_done, total_shards, len(jobs), n_workers,
+        already_done,
+        total_shards,
+        len(jobs),
+        n_workers,
     )
 
     completed = 0
     failed: list[tuple[str, str]] = []
 
     with ThreadPoolExecutor(max_workers=n_workers) as pool:
-        futures = {
-            pool.submit(_run_shard_subprocess, did, mh): (did, mh)
-            for did, mh in jobs
-        }
+        futures = {pool.submit(_run_shard_subprocess, did, mh): (did, mh) for did, mh in jobs}
         for fut in as_completed(futures):
             did, mh = futures[fut]
             try:
@@ -473,7 +524,10 @@ def _run_coordinator(jobs: list[tuple[str, str]], n_workers: int) -> None:
                 _consolidate_raw_runs()
                 logger.info(
                     "  [%d/%d] %s/%s DONE (median MSI=%s)",
-                    completed, len(jobs), did, mh,
+                    completed,
+                    len(jobs),
+                    did,
+                    mh,
                     f"{df['msi'].median():.4f}" if df["msi"].notna().any() else "N/A",
                 )
 
@@ -503,22 +557,30 @@ def _run_sequential(jobs: list[tuple[str, str]]) -> None:
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[1] if __doc__ else "")
     parser.add_argument(
-        "--jobs", type=int, default=DEFAULT_JOBS,
+        "--jobs",
+        type=int,
+        default=DEFAULT_JOBS,
         help=f"Number of parallel subprocess workers (default: {DEFAULT_JOBS}).",
     )
     parser.add_argument(
-        "--sequential", action="store_true",
+        "--sequential",
+        action="store_true",
         help="Run all shards in-process (alias for --jobs 1, bypasses subprocess layer).",
     )
     parser.add_argument(
-        "--shard", nargs=2, metavar=("DATASET_ID", "METAHEURISTIC"), default=None,
+        "--shard",
+        nargs=2,
+        metavar=("DATASET_ID", "METAHEURISTIC"),
+        default=None,
         help="Worker mode: run one shard and exit (invoked by coordinator subprocesses).",
     )
     parser.add_argument(
-        "--smoke", action="store_true",
+        "--smoke",
+        action="store_true",
         help=(
             f"Smoke mode: overrides N_SEEDS={_SMOKE_N_SEEDS}, "
             f"TIME_BUDGET={_SMOKE_TIME_BUDGET}s, first {_SMOKE_N_DATASETS} datasets only. "
@@ -535,7 +597,10 @@ def main() -> None:
         _apply_smoke_overrides()
         logger.info(
             "SMOKE MODE: N_SEEDS=%d, TIME_BUDGET=%ds, %d datasets, artifacts -> %s",
-            N_SEEDS, TIME_BUDGET, N_DATASETS_LIMIT, ARTIFACTS,
+            N_SEEDS,
+            TIME_BUDGET,
+            N_DATASETS_LIMIT,
+            ARTIFACTS,
         )
 
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
@@ -550,7 +615,11 @@ def main() -> None:
     logger.info(
         "Experiment 02 (MH comparison): 50 datasets x %d MHs x %d seeds x %ds "
         "(quadrat_filter=%s, msi_space=%s, q_learning=False)",
-        len(METAHEURISTICS), N_SEEDS, TIME_BUDGET, QUADRAT_FILTER, MSI_SPACE,
+        len(METAHEURISTICS),
+        N_SEEDS,
+        TIME_BUDGET,
+        QUADRAT_FILTER,
+        MSI_SPACE,
     )
 
     jobs = _build_job_list()

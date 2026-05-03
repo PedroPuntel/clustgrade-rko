@@ -8,15 +8,16 @@ Produces:
 Usage:
     poetry run python -m experiments.01-param-study.plot
 """
+
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
+from matplotlib.axes import Axes
 from scipy.stats import gaussian_kde
 
 _ROOT = Path(__file__).parents[2]
@@ -159,7 +160,9 @@ def plot_raincloud_msi() -> None:
 
     fig, ax = plt.subplots(figsize=(8, 6))
     _raincloud_multi(
-        ax, values, "MSI",
+        ax,
+        values,
+        "MSI",
         "Experiment 01 — MSI: RKO Parameter Configurations",
     )
     fig.tight_layout()
@@ -176,7 +179,9 @@ def plot_raincloud_ari() -> None:
 
     fig, ax = plt.subplots(figsize=(8, 6))
     _raincloud_multi(
-        ax, values, "ARI",
+        ax,
+        values,
+        "ARI",
         "Experiment 01 — ARI: RKO Parameter Configurations (CLASSF)",
     )
     fig.tight_layout()

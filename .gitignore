@@ -68,3 +68,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# AI Tools
+.dual-graph/
+.claude/
+CLAUDE.md

@@ -18,6 +18,7 @@ Statistical design:
 Usage:
     poetry run python -m experiments.02-qlearning-mh-comparison.aggregate_mh_comparison
 """
+
 from __future__ import annotations
 
 import argparse
@@ -58,6 +59,7 @@ WLT_TOL: float = 0.01  # clinically-meaningful MSI delta (matches Exp 01 convent
 # Loading + per-dataset medians
 # ---------------------------------------------------------------------------
 
+
 def load_raw() -> pd.DataFrame:
     if not RAW_RUNS_PATH.exists():
         raise FileNotFoundError(
@@ -70,21 +72,23 @@ def compute_per_dataset_medians(df: pd.DataFrame) -> pd.DataFrame:
     """Long-form medians grouped by (dataset_id, group, metaheuristic)."""
     return (
         df.groupby(["dataset_id", "group", "metaheuristic"])
-          .agg(
-              msi_median=("msi", "median"),
-              ari_median=("ari", "median"),
-              k_median=("k", "median"),
-              eval_median=("eval_count", "median"),
-              time_to_best_median=("time_to_best", "median"),
-          )
-          .reset_index()
+        .agg(
+            msi_median=("msi", "median"),
+            ari_median=("ari", "median"),
+            k_median=("k", "median"),
+            eval_median=("eval_count", "median"),
+            time_to_best_median=("time_to_best", "median"),
+        )
+        .reset_index()
     )
 
 
 def pivot_wide(medians: pd.DataFrame, value_col: str) -> pd.DataFrame:
     """Pivot long medians into wide form: one row per dataset, one column per MH."""
     wide = medians.pivot_table(
-        index=["dataset_id", "group"], columns="metaheuristic", values=value_col,
+        index=["dataset_id", "group"],
+        columns="metaheuristic",
+        values=value_col,
     ).reset_index()
     wide.columns.name = None
     # Enforce deterministic column order.
@@ -96,6 +100,7 @@ def pivot_wide(medians: pd.DataFrame, value_col: str) -> pd.DataFrame:
 # Statistical tests
 # ---------------------------------------------------------------------------
 
+
 def friedman_on_matrix(wide: pd.DataFrame, label: str) -> dict:
     """Friedman test across the 3 MH columns of a wide table. Drops rows with NaN."""
     cols = [mh for mh in METAHEURISTICS if mh in wide.columns]
@@ -103,11 +108,19 @@ def friedman_on_matrix(wide: pd.DataFrame, label: str) -> dict:
     n = len(block)
     if n < 5:
         logger.warning("  Friedman [%s]: only %d complete blocks — skipping", label, n)
-        return {"metric": label, "test": "friedman", "n_blocks": n,
-                "statistic": None, "p_value": None, "significant": None}
+        return {
+            "metric": label,
+            "test": "friedman",
+            "n_blocks": n,
+            "statistic": None,
+            "p_value": None,
+            "significant": None,
+        }
     stat, p = stats.friedmanchisquare(*[block[c].values for c in cols])
     return {
-        "metric": label, "test": "friedman", "n_blocks": n,
+        "metric": label,
+        "test": "friedman",
+        "n_blocks": n,
         "statistic": round(float(stat), 4),
         "p_value": round(float(p), 6),
         "significant": bool(p < 0.05),
@@ -122,33 +135,50 @@ def pairwise_wilcoxon(wide: pd.DataFrame, label: str) -> list[dict]:
         paired = wide[[a, b]].dropna()
         n_pairs = len(paired)
         if n_pairs < 5:
-            rows.append({
-                "metric": label, "test": "wilcoxon", "pair": f"{a}_vs_{b}",
-                "n_pairs": n_pairs, "statistic": None, "p_value": None,
-                "significant": None,
-            })
+            rows.append(
+                {
+                    "metric": label,
+                    "test": "wilcoxon",
+                    "pair": f"{a}_vs_{b}",
+                    "n_pairs": n_pairs,
+                    "statistic": None,
+                    "p_value": None,
+                    "significant": None,
+                }
+            )
             continue
         diffs = paired[a].values - paired[b].values
         if np.all(diffs == 0):
-            rows.append({
-                "metric": label, "test": "wilcoxon", "pair": f"{a}_vs_{b}",
-                "n_pairs": n_pairs, "statistic": 0.0, "p_value": 1.0,
-                "significant": False,
-            })
+            rows.append(
+                {
+                    "metric": label,
+                    "test": "wilcoxon",
+                    "pair": f"{a}_vs_{b}",
+                    "n_pairs": n_pairs,
+                    "statistic": 0.0,
+                    "p_value": 1.0,
+                    "significant": False,
+                }
+            )
             continue
         res = stats.wilcoxon(paired[a].values, paired[b].values, alternative="two-sided")
-        rows.append({
-            "metric": label, "test": "wilcoxon", "pair": f"{a}_vs_{b}",
-            "n_pairs": n_pairs,
-            "statistic": round(float(res.statistic), 4),
-            "p_value": round(float(res.pvalue), 6),
-            "significant": bool(res.pvalue < 0.05),
-        })
+        rows.append(
+            {
+                "metric": label,
+                "test": "wilcoxon",
+                "pair": f"{a}_vs_{b}",
+                "n_pairs": n_pairs,
+                "statistic": round(float(res.statistic), 4),
+                "p_value": round(float(res.pvalue), 6),
+                "significant": bool(res.pvalue < 0.05),
+            }
+        )
     return rows
 
 
 def holm_bonferroni(
-    p_values: list[float | None], alpha: float = 0.05,
+    p_values: list[float | None],
+    alpha: float = 0.05,
 ) -> tuple[list[bool | None], list[float | None]]:
     """Step-down Holm-Bonferroni correction over a family of p-values.
 
@@ -199,11 +229,16 @@ def win_loss_tie_pairwise(wide: pd.DataFrame, label: str, tol: float = WLT_TOL) 
         wins = int(np.sum(diffs > tol))
         losses = int(np.sum(diffs < -tol))
         ties = int(len(diffs) - wins - losses)
-        rows.append({
-            "metric": label, "pair": f"{a}_vs_{b}",
-            f"{a}_wins": wins, f"{b}_wins": losses,
-            "ties": ties, "total": int(len(diffs)),
-        })
+        rows.append(
+            {
+                "metric": label,
+                "pair": f"{a}_vs_{b}",
+                f"{a}_wins": wins,
+                f"{b}_wins": losses,
+                "ties": ties,
+                "total": int(len(diffs)),
+            }
+        )
     return rows
 
 
@@ -211,25 +246,38 @@ def win_loss_tie_pairwise(wide: pd.DataFrame, label: str, tol: float = WLT_TOL) 
 # Rankings
 # ---------------------------------------------------------------------------
 
+
 def ranking_table(wide: pd.DataFrame, label: str) -> pd.DataFrame:
     """Overall ranking of metaheuristics by median-of-medians on the given metric."""
-    columns = ["rank", "metaheuristic", "label", "n_datasets",
-               "median", "mean", "std", "min", "max", "metric"]
+    columns = [
+        "rank",
+        "metaheuristic",
+        "label",
+        "n_datasets",
+        "median",
+        "mean",
+        "std",
+        "min",
+        "max",
+        "metric",
+    ]
     rows = []
     for mh in METAHEURISTICS:
         if mh not in wide.columns:
             continue
         vals = wide[mh].dropna().values.astype(float)
-        rows.append({
-            "metaheuristic": mh,
-            "label": MH_LABELS[mh],
-            "n_datasets": int(len(vals)),
-            "median": round(float(np.median(vals)), 6) if len(vals) else None,
-            "mean": round(float(np.mean(vals)), 6) if len(vals) else None,
-            "std": round(float(np.std(vals, ddof=1)), 6) if len(vals) > 1 else None,
-            "min": round(float(np.min(vals)), 6) if len(vals) else None,
-            "max": round(float(np.max(vals)), 6) if len(vals) else None,
-        })
+        rows.append(
+            {
+                "metaheuristic": mh,
+                "label": MH_LABELS[mh],
+                "n_datasets": int(len(vals)),
+                "median": round(float(np.median(vals)), 6) if len(vals) else None,
+                "mean": round(float(np.mean(vals)), 6) if len(vals) else None,
+                "std": round(float(np.std(vals, ddof=1)), 6) if len(vals) > 1 else None,
+                "min": round(float(np.min(vals)), 6) if len(vals) else None,
+                "max": round(float(np.max(vals)), 6) if len(vals) else None,
+            }
+        )
 
     if not rows:
         logger.warning("Ranking [%s]: no data for any metaheuristic — returning empty table", label)
@@ -237,7 +285,9 @@ def ranking_table(wide: pd.DataFrame, label: str) -> pd.DataFrame:
 
     rank_df = pd.DataFrame(rows)
     rank_df = rank_df.sort_values(
-        "median", ascending=False, na_position="last",
+        "median",
+        ascending=False,
+        na_position="last",
     ).reset_index(drop=True)
     rank_df.insert(0, "rank", rank_df.index + 1)
     rank_df["metric"] = label
@@ -247,6 +297,7 @@ def ranking_table(wide: pd.DataFrame, label: str) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Reviewer-format CSV (Friedman + Wilcoxon + Holm-adj p)
 # ---------------------------------------------------------------------------
+
 
 def format_statistical_tests_table(tests: list[dict]) -> pd.DataFrame:
     """Reshape the tests list into a polished, reviewer-friendly frame.
@@ -274,15 +325,17 @@ def format_statistical_tests_table(tests: list[dict]) -> pd.DataFrame:
             p_holm_value = t.get("p_holm")
             p_holm = f"{float(p_holm_value):.4f}" if p_holm_value is not None else "—"
 
-        rows.append({
-            "_family": family,
-            "familia": family_labels.get(family, family),
-            "teste": test_kind.title() if test_kind else "",
-            "comparativo": comparativo,
-            "_n": n,
-            "p_valor": t.get("p_value"),
-            "p_valor_holm": p_holm,
-        })
+        rows.append(
+            {
+                "_family": family,
+                "familia": family_labels.get(family, family),
+                "teste": test_kind.title() if test_kind else "",
+                "comparativo": comparativo,
+                "_n": n,
+                "p_valor": t.get("p_value"),
+                "p_valor_holm": p_holm,
+            }
+        )
     family_order = {"MSI": 0, "ARI_CLASSF": 1}
     test_order = {"Friedman": 0, "Wilcoxon": 1}
     return (
@@ -301,10 +354,12 @@ def format_statistical_tests_table(tests: list[dict]) -> pd.DataFrame:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--smoke", action="store_true",
+        "--smoke",
+        action="store_true",
         help="Read from the smoke-mode artifacts folder (artifacts/mh_comparison_smoke/).",
     )
     args = parser.parse_args()
@@ -400,16 +455,20 @@ def main() -> None:
 
     print("\n--- MSI ranking (all 50 datasets) ---")
     print(ranking_msi.to_string(index=False))
-    print(f"\nFriedman MSI: stat={fr_msi['statistic']}, p={fr_msi['p_value']}, "
-          f"significant={fr_msi['significant']}")
+    print(
+        f"\nFriedman MSI: stat={fr_msi['statistic']}, p={fr_msi['p_value']}, "
+        f"significant={fr_msi['significant']}"
+    )
     print("Pairwise Wilcoxon MSI (Holm-Bonferroni m=3):")
     for r in wilcoxon_msi:
         print(f"  {r['pair']}: p={r['p_value']}, sig_holm={r['significant_holm']}")
 
     print("\n--- ARI ranking (18 CLASSF datasets) ---")
     print(ranking_ari.to_string(index=False))
-    print(f"\nFriedman ARI: stat={fr_ari['statistic']}, p={fr_ari['p_value']}, "
-          f"significant={fr_ari['significant']}")
+    print(
+        f"\nFriedman ARI: stat={fr_ari['statistic']}, p={fr_ari['p_value']}, "
+        f"significant={fr_ari['significant']}"
+    )
     print("Pairwise Wilcoxon ARI (Holm-Bonferroni m=3):")
     for r in wilcoxon_ari:
         print(f"  {r['pair']}: p={r['p_value']}, sig_holm={r['significant_holm']}")

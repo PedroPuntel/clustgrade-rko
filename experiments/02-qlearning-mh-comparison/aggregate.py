@@ -10,6 +10,7 @@ Reads raw_runs.csv and produces:
 Usage:
     poetry run python -m experiments.02-qlearning-mh-comparison.aggregate
 """
+
 from __future__ import annotations
 
 import sys
@@ -35,12 +36,16 @@ def load_raw() -> pd.DataFrame:
 
 
 def compute_per_dataset_medians(df: pd.DataFrame) -> pd.DataFrame:
-    grouped = df.groupby(["dataset_id", "group", "q_learning"]).agg(
-        msi_median=("msi", "median"),
-        ari_median=("ari", "median"),
-        k_median=("k", "median"),
-        eval_median=("eval_count", "median"),
-    ).reset_index()
+    grouped = (
+        df.groupby(["dataset_id", "group", "q_learning"])
+        .agg(
+            msi_median=("msi", "median"),
+            ari_median=("ari", "median"),
+            k_median=("k", "median"),
+            eval_median=("eval_count", "median"),
+        )
+        .reset_index()
+    )
     return grouped
 
 
@@ -86,8 +91,13 @@ def _wilcoxon_test(
 
     if n_pairs < 5:
         logger.warning("  %s: only %d valid pairs — skipping Wilcoxon", label, n_pairs)
-        return {"metric": label, "n_pairs": n_pairs, "statistic": None,
-                "p_value": None, "significant": None}
+        return {
+            "metric": label,
+            "n_pairs": n_pairs,
+            "statistic": None,
+            "p_value": None,
+            "significant": None,
+        }
 
     stat_result = stats.wilcoxon(off_clean, on_clean, alternative="two-sided")
     return {
@@ -105,8 +115,13 @@ def _win_loss_tie(deltas: np.ndarray, label: str, tol: float = 0.01) -> dict:
     wins = int(np.sum(valid > tol))
     losses = int(np.sum(valid < -tol))
     ties = int(len(valid) - wins - losses)
-    return {"metric": label, "ql_wins": wins, "ql_losses": losses, "ties": ties,
-            "total": len(valid)}
+    return {
+        "metric": label,
+        "ql_wins": wins,
+        "ql_losses": losses,
+        "ties": ties,
+        "total": len(valid),
+    }
 
 
 def _holm_bonferroni(p_values: list[float], alpha: float = 0.05) -> list[bool]:
@@ -132,7 +147,9 @@ def main() -> None:
 
     # --- MSI analysis (all datasets) ---
     msi_wide = medians.pivot_table(
-        index=["dataset_id", "group"], columns="q_learning", values="msi_median",
+        index=["dataset_id", "group"],
+        columns="q_learning",
+        values="msi_median",
     ).reset_index()
     msi_wide.columns.name = None
     msi_wide = msi_wide.rename(columns={False: "msi_off", True: "msi_on"})
@@ -148,7 +165,9 @@ def main() -> None:
 
     # --- ARI analysis (CLASSF datasets) ---
     ari_wide = medians.pivot_table(
-        index=["dataset_id", "group"], columns="q_learning", values="ari_median",
+        index=["dataset_id", "group"],
+        columns="q_learning",
+        values="ari_median",
     ).reset_index()
     ari_wide.columns.name = None
     ari_wide = ari_wide.rename(columns={False: "ari_off", True: "ari_on"})
@@ -179,18 +198,26 @@ def main() -> None:
     print("\n--- MSI (all datasets) ---")
     print(f"  Median MSI (QL=OFF): {np.nanmedian(msi_off):.4f}")
     print(f"  Median MSI (QL=ON):  {np.nanmedian(msi_on):.4f}")
-    print(f"  Win/Loss/Tie: QL wins={wlt_msi['ql_wins']}, "
-          f"losses={wlt_msi['ql_losses']}, ties={wlt_msi['ties']}")
-    print(f"  Wilcoxon: stat={wt_msi['statistic']}, p={wt_msi['p_value']}, "
-          f"sig(Holm)={wt_msi['significant_holm']}")
+    print(
+        f"  Win/Loss/Tie: QL wins={wlt_msi['ql_wins']}, "
+        f"losses={wlt_msi['ql_losses']}, ties={wlt_msi['ties']}"
+    )
+    print(
+        f"  Wilcoxon: stat={wt_msi['statistic']}, p={wt_msi['p_value']}, "
+        f"sig(Holm)={wt_msi['significant_holm']}"
+    )
 
     print("\n--- ARI (CLASSF datasets) ---")
     print(f"  Median ARI (QL=OFF): {np.nanmedian(ari_off):.4f}")
     print(f"  Median ARI (QL=ON):  {np.nanmedian(ari_on):.4f}")
-    print(f"  Win/Loss/Tie: QL wins={wlt_ari['ql_wins']}, "
-          f"losses={wlt_ari['ql_losses']}, ties={wlt_ari['ties']}")
-    print(f"  Wilcoxon: stat={wt_ari['statistic']}, p={wt_ari['p_value']}, "
-          f"sig(Holm)={wt_ari['significant_holm']}")
+    print(
+        f"  Win/Loss/Tie: QL wins={wlt_ari['ql_wins']}, "
+        f"losses={wlt_ari['ql_losses']}, ties={wlt_ari['ties']}"
+    )
+    print(
+        f"  Wilcoxon: stat={wt_ari['statistic']}, p={wt_ari['p_value']}, "
+        f"sig(Holm)={wt_ari['significant_holm']}"
+    )
 
     # --- Save statistical test results ---
     stats_df = pd.DataFrame([wt_msi, wt_ari])
@@ -231,11 +258,15 @@ def main() -> None:
 
     # --- Delta bar charts ---
     plot_delta_distribution(
-        msi_deltas, msi_wide["dataset_id"].tolist(), "MSI",
+        msi_deltas,
+        msi_wide["dataset_id"].tolist(),
+        "MSI",
         ARTIFACTS / "msi_delta_barplot.png",
     )
     plot_delta_distribution(
-        ari_deltas, ari_classf["dataset_id"].tolist(), "ARI",
+        ari_deltas,
+        ari_classf["dataset_id"].tolist(),
+        "ARI",
         ARTIFACTS / "ari_delta_barplot.png",
     )
 

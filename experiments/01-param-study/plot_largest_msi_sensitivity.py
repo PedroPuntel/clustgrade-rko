@@ -7,6 +7,7 @@ Produces:
 Usage:
     poetry run python -m experiments.01-param-study.plot_largest_msi_sensitivity
 """
+
 from __future__ import annotations
 
 import sys
@@ -16,7 +17,11 @@ _HERE = Path(__file__).parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
-from _sensitivity_plot_common import N_TOP_DEFAULT, run_and_plot_selection, select_top_sensitive_datasets
+from _sensitivity_plot_common import (
+    N_TOP_DEFAULT,
+    run_and_plot_selection,
+    select_top_sensitive_datasets,
+)
 
 
 def main() -> None:

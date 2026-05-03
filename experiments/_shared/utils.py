@@ -4,6 +4,7 @@ Shared utilities for ClustGrade experiments.
 All helpers enforce the noise-exclusion policy (label == -1 is noise),
 the seeding strategy, and consistent metric computation across experiments.
 """
+
 from __future__ import annotations
 
 import random
@@ -14,7 +15,8 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from sklearn.metrics import adjusted_rand_score, silhouette_score as skl_sil
+from sklearn.metrics import adjusted_rand_score
+from sklearn.metrics import silhouette_score as skl_sil
 from sklearn.preprocessing import LabelEncoder
 
 # ---------------------------------------------------------------------------
@@ -91,6 +93,7 @@ def _extract_features_and_labels(
 # Manifest loading
 # ---------------------------------------------------------------------------
 
+
 def load_manifest() -> pd.DataFrame:
     """Load the canonical dataset manifest."""
     path = Path(__file__).parent / "datasets_manifest.csv"
@@ -125,21 +128,32 @@ def manifest_subset7(df: pd.DataFrame) -> pd.DataFrame:
 # 12 CLUST (size-stratified) + 8 CLASSF (size-stratified).
 _SUBSET_20_IDS: set[str] = {
     # CLUST — small
-    "RUSPINI", "OUTLIERS",
+    "RUSPINI",
+    "OUTLIERS",
     # CLUST — medium
-    "200DATA", "FACE", "400P3C",
+    "200DATA",
+    "FACE",
+    "400P3C",
     # CLUST — large
-    "CHART", "BROKEN-RING", "GAUSS9", "TRIPADVISOR",
+    "CHART",
+    "BROKEN-RING",
+    "GAUSS9",
+    "TRIPADVISOR",
     # CLUST — very large
-    "CONCRETEDATA", "WAVEFORM21",
+    "CONCRETEDATA",
+    "WAVEFORM21",
     # CLUST — extra (to reach 12)
     "SONAR",
     # CLASSF — small
-    "IRIS", "WINE",
+    "IRIS",
+    "WINE",
     # CLASSF — medium
-    "ECOLI", "JAIN",
+    "ECOLI",
+    "JAIN",
     # CLASSF — large
-    "WDBC", "AGGREGATION", "PIMA-INDIANS",
+    "WDBC",
+    "AGGREGATION",
+    "PIMA-INDIANS",
     # CLASSF — very large
     "YEAST",
 }
@@ -153,6 +167,7 @@ def manifest_subset20(df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Data loading helpers
 # ---------------------------------------------------------------------------
+
 
 def load_features(row: pd.Series) -> npt.NDArray[np.float64]:
     """
@@ -200,6 +215,7 @@ def load_stored_labels(dataset_id: str) -> npt.NDArray[Any]:
 # Seeding
 # ---------------------------------------------------------------------------
 
+
 def seed_run(seed: int) -> None:
     """
     Seed both Python random and numpy for reproducible stochastic runs.
@@ -216,6 +232,7 @@ def seed_run(seed: int) -> None:
 # ---------------------------------------------------------------------------
 # Metric helpers (noise-exclusion policy enforced here)
 # ---------------------------------------------------------------------------
+
 
 def noise_mask(labels: list[int] | npt.NDArray[np.int64]) -> npt.NDArray[np.bool_]:
     """Return boolean mask of non-noise points (label != -1)."""
