@@ -8,15 +8,16 @@ Produces:
 Usage:
     poetry run python -m experiments.02-qlearning-mh-comparison.plot
 """
+
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
+from matplotlib.axes import Axes
 from scipy.stats import gaussian_kde
 
 _ROOT = Path(__file__).parents[2]
@@ -140,7 +141,9 @@ def plot_raincloud_msi() -> None:
 
     fig, ax = plt.subplots(figsize=(6, 6))
     _raincloud(
-        ax, values, "MSI",
+        ax,
+        values,
+        "MSI",
         "Experiment 02 \u2014 MSI: Q-learning Impact",
     )
     fig.tight_layout()
@@ -157,7 +160,9 @@ def plot_raincloud_ari() -> None:
 
     fig, ax = plt.subplots(figsize=(6, 6))
     _raincloud(
-        ax, values, "ARI",
+        ax,
+        values,
+        "ARI",
         "Experiment 02 \u2014 ARI: Q-learning Impact (CLASSF)",
     )
     fig.tight_layout()

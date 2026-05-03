@@ -46,6 +46,8 @@ ignore = ["E501"]
 "rko/environment.py" = ["E402", "N803", "N806"]
 "rko/pipeline.py"   = ["E402", "N803", "N806"]
 "rko/run.py"        = ["E402"]
+# experiments/* scripts bootstrap sys.path before importing local packages.
+"experiments/**/*.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.12"

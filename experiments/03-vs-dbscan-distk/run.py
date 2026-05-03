@@ -22,6 +22,7 @@ Output:
 Usage:
     poetry run python -m experiments.03-vs-dbscan-distk.run
 """
+
 from __future__ import annotations
 
 import json
@@ -39,12 +40,6 @@ for p in [str(_SRC), str(_RKO_FW), str(_ROOT)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from RKO import RKO
-
-from rko.environment import ClustGradeEnv
-from rko.pipeline import preprocess
-from utils.logging import get_logger
-
 from experiments._shared.utils import (
     compute_ari,
     compute_msi,
@@ -53,6 +48,10 @@ from experiments._shared.utils import (
     load_stored_labels,
     seed_run,
 )
+from RKO import RKO
+from rko.environment import ClustGradeEnv
+from rko.pipeline import preprocess
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -76,6 +75,7 @@ MSI_SPACE: str = _BEST_CONFIG["msi_space"]
 # RKO runner
 # ---------------------------------------------------------------------------
 
+
 def run_rko(
     dataset_id: str,
     group: str,
@@ -88,7 +88,9 @@ def run_rko(
     seed_run(seed)
 
     env = ClustGradeEnv(
-        features, ppp, scaled_mds,
+        features,
+        ppp,
+        scaled_mds,
         instance_name=dataset_id,
         max_time=RKO_TIME_BUDGET,
         msi_space=MSI_SPACE,
@@ -134,6 +136,7 @@ def run_rko(
 # Main
 # ---------------------------------------------------------------------------
 
+
 def _load_checkpoint() -> tuple[pd.DataFrame, set[str]]:
     """Load existing partial results and return (dataframe, set of completed dataset_ids)."""
     out_path = ARTIFACTS / "rko_runs.csv"
@@ -151,8 +154,14 @@ def main() -> None:
     manifest = load_manifest()
 
     logger.info("Experiment 03: ClustGrade-RKO on %d datasets", len(manifest))
-    logger.info("  RKO config: quadrat_filter=%s, msi_space=%s, q_learning=%s, %ds, seeds=%d",
-                QUADRAT_FILTER, MSI_SPACE, Q_LEARNING, RKO_TIME_BUDGET, N_SEEDS)
+    logger.info(
+        "  RKO config: quadrat_filter=%s, msi_space=%s, q_learning=%s, %ds, seeds=%d",
+        QUADRAT_FILTER,
+        MSI_SPACE,
+        Q_LEARNING,
+        RKO_TIME_BUDGET,
+        N_SEEDS,
+    )
 
     existing_df, done_datasets = _load_checkpoint()
     records: list[dict] = list(existing_df.to_dict("records")) if len(existing_df) > 0 else []
@@ -164,7 +173,13 @@ def main() -> None:
         group: str = row["group"]
 
         if dataset_id in done_datasets:
-            logger.info("=== [%d/%d] %s [%s] === SKIPPED (checkpoint)", idx + 1, len(manifest), dataset_id, group)
+            logger.info(
+                "=== [%d/%d] %s [%s] === SKIPPED (checkpoint)",
+                idx + 1,
+                len(manifest),
+                dataset_id,
+                group,
+            )
             continue
 
         logger.info("=== [%d/%d] %s [%s] ===", idx + 1, len(manifest), dataset_id, group)
@@ -181,22 +196,36 @@ def main() -> None:
         for seed in range(N_SEEDS):
             try:
                 rec = run_rko(
-                    dataset_id, group, features, scaled_mds, ppp,
-                    true_labels, seed,
+                    dataset_id,
+                    group,
+                    features,
+                    scaled_mds,
+                    ppp,
+                    true_labels,
+                    seed,
                 )
                 records.append(rec)
-                logger.info("  RKO seed=%d  K=%d  MSI=%s  ARI=%s",
-                            seed, rec["k"],
-                            f"{rec['msi']:.4f}" if rec["msi"] is not None else "N/A",
-                            f"{rec['ari']:.4f}" if rec["ari"] is not None else "N/A")
+                logger.info(
+                    "  RKO seed=%d  K=%d  MSI=%s  ARI=%s",
+                    seed,
+                    rec["k"],
+                    f"{rec['msi']:.4f}" if rec["msi"] is not None else "N/A",
+                    f"{rec['ari']:.4f}" if rec["ari"] is not None else "N/A",
+                )
             except Exception as exc:  # noqa: BLE001
                 logger.error("  RKO seed=%d FAILED: %s", seed, exc)
-                records.append({
-                    "dataset_id": dataset_id, "group": group,
-                    "algorithm": "ClustGrade-RKO", "seed": seed,
-                    "k": None, "msi": None, "ari": None,
-                    "internal_cost": None,
-                })
+                records.append(
+                    {
+                        "dataset_id": dataset_id,
+                        "group": group,
+                        "algorithm": "ClustGrade-RKO",
+                        "seed": seed,
+                        "k": None,
+                        "msi": None,
+                        "ari": None,
+                        "internal_cost": None,
+                    }
+                )
 
         # Checkpoint: save after each dataset completes.
         df = pd.DataFrame(records)

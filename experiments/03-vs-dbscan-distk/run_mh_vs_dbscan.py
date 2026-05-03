@@ -31,6 +31,7 @@ Writes (under experiments/03-vs-dbscan-distk/artifacts/mh_vs_dbscan/):
 Usage:
     poetry run python -m experiments.03-vs-dbscan-distk.run_mh_vs_dbscan
 """
+
 from __future__ import annotations
 
 import argparse
@@ -53,27 +54,14 @@ logger = get_logger(__name__)
 # Paths
 # ---------------------------------------------------------------------------
 
-_EXP06_MH_DIR = (
-    _ROOT / "experiments" / "02-qlearning-mh-comparison"
-    / "artifacts" / "mh_comparison"
-)
+_EXP06_MH_DIR = _ROOT / "experiments" / "02-qlearning-mh-comparison" / "artifacts" / "mh_comparison"
 EXP06_MEDIANS = _EXP06_MH_DIR / "per_dataset_medians.csv"
-EXP07_DBSCAN = (
-    _ROOT / "experiments" / "03-vs-dbscan-distk"
-    / "artifacts" / "dbscan_distk_runs.csv"
-)
+EXP07_DBSCAN = _ROOT / "experiments" / "03-vs-dbscan-distk" / "artifacts" / "dbscan_distk_runs.csv"
 EXP07_HYBRID_STATS = (
-    _ROOT / "experiments" / "03-vs-dbscan-distk"
-    / "artifacts" / "statistical_tests.csv"
+    _ROOT / "experiments" / "03-vs-dbscan-distk" / "artifacts" / "statistical_tests.csv"
 )
-EXP07_COMPARISON = (
-    _ROOT / "experiments" / "03-vs-dbscan-distk"
-    / "artifacts" / "comparison.csv"
-)
-OUT_DIR = (
-    _ROOT / "experiments" / "03-vs-dbscan-distk"
-    / "artifacts" / "mh_vs_dbscan"
-)
+EXP07_COMPARISON = _ROOT / "experiments" / "03-vs-dbscan-distk" / "artifacts" / "comparison.csv"
+OUT_DIR = _ROOT / "experiments" / "03-vs-dbscan-distk" / "artifacts" / "mh_vs_dbscan"
 
 
 # ---------------------------------------------------------------------------
@@ -92,25 +80,28 @@ TOL: float = 0.01  # clinically-meaningful delta for win/loss; consistent with E
 
 ALGO_LABELS: dict[str, str] = {**MH_LABELS, "dbscan": "DBSCAN"}
 
-plt.rcParams.update({
-    "font.family": "serif",
-    "font.size": 10,
-    "axes.titlesize": 11,
-    "axes.labelsize": 10,
-    "xtick.labelsize": 9,
-    "ytick.labelsize": 9,
-    "legend.fontsize": 9,
-    "axes.grid": True,
-    "grid.alpha": 0.25,
-    "grid.linewidth": 0.5,
-    "savefig.dpi": 300,
-    "savefig.bbox": "tight",
-})
+plt.rcParams.update(
+    {
+        "font.family": "serif",
+        "font.size": 10,
+        "axes.titlesize": 11,
+        "axes.labelsize": 10,
+        "xtick.labelsize": 9,
+        "ytick.labelsize": 9,
+        "legend.fontsize": 9,
+        "axes.grid": True,
+        "grid.alpha": 0.25,
+        "grid.linewidth": 0.5,
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # Statistical tests (paired Wilcoxon vs DBSCAN + Holm-Bonferroni)
 # ---------------------------------------------------------------------------
+
 
 def _pairwise_wilcoxon_vs_dbscan(
     wide: pd.DataFrame,
@@ -128,31 +119,54 @@ def _pairwise_wilcoxon_vs_dbscan(
         paired = wide[[mh_col, dbscan_col]].dropna()
         n = len(paired)
         if n < 5:
-            rows.append({"metric": label, "test": "wilcoxon", "pair": f"{mh_col}_vs_{dbscan_col}",
-                         "n_pairs": n, "statistic": None, "p_value": None, "significant": None})
+            rows.append(
+                {
+                    "metric": label,
+                    "test": "wilcoxon",
+                    "pair": f"{mh_col}_vs_{dbscan_col}",
+                    "n_pairs": n,
+                    "statistic": None,
+                    "p_value": None,
+                    "significant": None,
+                }
+            )
             continue
         diffs = paired[mh_col].values - paired[dbscan_col].values
         if np.all(diffs == 0):
-            rows.append({"metric": label, "test": "wilcoxon", "pair": f"{mh_col}_vs_{dbscan_col}",
-                         "n_pairs": n, "statistic": 0.0, "p_value": 1.0, "significant": False})
+            rows.append(
+                {
+                    "metric": label,
+                    "test": "wilcoxon",
+                    "pair": f"{mh_col}_vs_{dbscan_col}",
+                    "n_pairs": n,
+                    "statistic": 0.0,
+                    "p_value": 1.0,
+                    "significant": False,
+                }
+            )
             continue
         res = stats.wilcoxon(
             paired[mh_col].values,
             paired[dbscan_col].values,
             alternative="two-sided",
         )
-        rows.append({
-            "metric": label, "test": "wilcoxon", "pair": f"{mh_col}_vs_{dbscan_col}",
-            "n_pairs": n,
-            "statistic": round(float(res.statistic), 4),
-            "p_value": round(float(res.pvalue), 6),
-            "significant": bool(res.pvalue < 0.05),
-        })
+        rows.append(
+            {
+                "metric": label,
+                "test": "wilcoxon",
+                "pair": f"{mh_col}_vs_{dbscan_col}",
+                "n_pairs": n,
+                "statistic": round(float(res.statistic), 4),
+                "p_value": round(float(res.pvalue), 6),
+                "significant": bool(res.pvalue < 0.05),
+            }
+        )
     return rows
 
 
 def _holm_bonferroni(
-    p_values: list[float | None], alpha: float = 0.05,
+    p_values: list[float | None],
+    alpha: float = 0.05,
 ) -> tuple[list[bool | None], list[float | None]]:
     n = len(p_values)
     m = len([p for p in p_values if p is not None])
@@ -194,13 +208,15 @@ def _format_reviewer_table(tests: list[dict]) -> pd.DataFrame:
                 str(ALGO_LABELS.get(p.split("_", 1)[-1], p.upper()) or p.upper()) for p in parts
             )
         n = t.get("n_pairs")
-        rows.append({
-            "_family": family,
-            "familia": family_labels.get(family, family),
-            "n": n,
-            "comparativo": comparison,
-            "p_valor": t.get("p_value"),
-        })
+        rows.append(
+            {
+                "_family": family,
+                "familia": family_labels.get(family, family),
+                "n": n,
+                "comparativo": comparison,
+                "p_valor": t.get("p_value"),
+            }
+        )
     family_order = {"MSI": 0, "ARI_CLASSF": 1}
     return (
         pd.DataFrame(rows)
@@ -214,7 +230,9 @@ def _format_reviewer_table(tests: list[dict]) -> pd.DataFrame:
 
 
 def run_statistical_tests(
-    medians: pd.DataFrame, dbscan: pd.DataFrame, out_dir: Path,
+    medians: pd.DataFrame,
+    dbscan: pd.DataFrame,
+    out_dir: Path,
 ) -> list[dict]:
     """Paired Wilcoxon (MH vs DBSCAN) + Holm-Bonferroni for each metric family.
 
@@ -266,11 +284,11 @@ def run_statistical_tests(
 # Loaders
 # ---------------------------------------------------------------------------
 
+
 def _load_mh_medians() -> pd.DataFrame:
     if not EXP06_MEDIANS.exists():
         raise FileNotFoundError(
-            f"Missing MH medians at {EXP06_MEDIANS}. "
-            "Run aggregate_mh_comparison.py first."
+            f"Missing MH medians at {EXP06_MEDIANS}. " "Run aggregate_mh_comparison.py first."
         )
     # This reviewer analysis intentionally uses Exp 02 per-dataset medians for
     # each isolated metaheuristic. That makes it a different estimand from
@@ -287,8 +305,7 @@ def _load_mh_medians() -> pd.DataFrame:
 def _load_dbscan() -> pd.DataFrame:
     if not EXP07_DBSCAN.exists():
         raise FileNotFoundError(
-            f"Missing DBSCAN-DistK runs at {EXP07_DBSCAN}. "
-            "Run run_dbscan_distk.py first."
+            f"Missing DBSCAN-DistK runs at {EXP07_DBSCAN}. " "Run run_dbscan_distk.py first."
         )
     df = pd.read_csv(EXP07_DBSCAN)
     required = {"dataset_id", "group", "msi", "ari"}
@@ -304,8 +321,7 @@ def _load_dbscan() -> pd.DataFrame:
 def _load_hybrid_tests() -> list[dict]:
     if not EXP07_HYBRID_STATS.exists():
         raise FileNotFoundError(
-            f"Missing hybrid statistical tests at {EXP07_HYBRID_STATS}. "
-            "Run aggregate.py first."
+            f"Missing hybrid statistical tests at {EXP07_HYBRID_STATS}. " "Run aggregate.py first."
         )
 
     df = pd.read_csv(EXP07_HYBRID_STATS)
@@ -330,18 +346,20 @@ def _load_hybrid_tests() -> list[dict]:
 
     rows: list[dict] = []
     for _, row in selected.iterrows():
-        rows.append({
-            "metric": family_map[str(row["metric"])],
-            "test": "wilcoxon",
-            "pair": str(row["metric"]),
-            "comparison_label": "ClustGrade-RKO Híbrido vs DBSCAN",
-            "n_pairs": int(row["n_pairs"]),
-            "statistic": float(row["statistic"]),
-            "p_value": float(row["p_value"]),
-            "significant": bool(row["significant"]),
-            "significant_holm": row["significant_holm"],
-            "p_holm": row["p_holm"],
-        })
+        rows.append(
+            {
+                "metric": family_map[str(row["metric"])],
+                "test": "wilcoxon",
+                "pair": str(row["metric"]),
+                "comparison_label": "ClustGrade-RKO Híbrido vs DBSCAN",
+                "n_pairs": int(row["n_pairs"]),
+                "statistic": float(row["statistic"]),
+                "p_value": float(row["p_value"]),
+                "significant": bool(row["significant"]),
+                "significant_holm": row["significant_holm"],
+                "p_holm": row["p_holm"],
+            }
+        )
     return rows
 
 
@@ -349,8 +367,7 @@ def _load_hybrid_comparison() -> pd.DataFrame:
     """Load Exp 03 hybrid-vs-DBSCAN wide comparison."""
     if not EXP07_COMPARISON.exists():
         raise FileNotFoundError(
-            f"Missing hybrid comparison at {EXP07_COMPARISON}. "
-            "Run aggregate.py first."
+            f"Missing hybrid comparison at {EXP07_COMPARISON}. " "Run aggregate.py first."
         )
 
     df = pd.read_csv(EXP07_COMPARISON)
@@ -371,6 +388,7 @@ def _load_hybrid_comparison() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Win/loss/tie computation
 # ---------------------------------------------------------------------------
+
 
 def compute_wlt_vs_dbscan(
     medians: pd.DataFrame,
@@ -417,18 +435,19 @@ def compute_wlt_vs_dbscan(
         losses = int(np.sum(diffs < -tol))
         ties = int(len(diffs) - wins - losses)
         n_total = int(len(diffs))
-        rows.append({
-            "metaheuristic": mh,
-            "label": MH_LABELS[mh],
-            "n_total": n_total,
-            "V": wins,
-            "D": losses,
-            "E": ties,
-            "overall_prop": None,
-            "relative_prop": round(wins / n_total, 4) if n_total else None,
-        })
-    cols = ["metaheuristic", "label", "n_total", "V", "D", "E",
-            "overall_prop", "relative_prop"]
+        rows.append(
+            {
+                "metaheuristic": mh,
+                "label": MH_LABELS[mh],
+                "n_total": n_total,
+                "V": wins,
+                "D": losses,
+                "E": ties,
+                "overall_prop": None,
+                "relative_prop": round(wins / n_total, 4) if n_total else None,
+            }
+        )
+    cols = ["metaheuristic", "label", "n_total", "V", "D", "E", "overall_prop", "relative_prop"]
     table = pd.DataFrame(rows, columns=cols)
     total_wins = int(table["V"].sum()) if not table.empty else 0
     if total_wins:
@@ -475,16 +494,18 @@ def _build_gap_rows(
 
     rows: list[dict] = []
     for ds, grp, raw, pct in zip(sub["dataset_id"], sub["group"], gap_raw, gap_pct):
-        rows.append({
-            "dataset_id": str(ds),
-            "group": str(grp),
-            "metric": metric,
-            "method_code": method_code,
-            "method_label": method_label,
-            "comparison_label": f"{method_label} vs DBSCAN",
-            "gap_raw": float(raw),
-            "gap_pct": float(pct),
-        })
+        rows.append(
+            {
+                "dataset_id": str(ds),
+                "group": str(grp),
+                "metric": metric,
+                "method_code": method_code,
+                "method_label": method_label,
+                "comparison_label": f"{method_label} vs DBSCAN",
+                "gap_raw": float(raw),
+                "gap_pct": float(pct),
+            }
+        )
     return rows
 
 
@@ -566,23 +587,20 @@ def compute_gap_vs_dbscan(
 
     gap_by_dataset = pd.DataFrame(rows)
 
-    summary = (
-        gap_by_dataset
-        .groupby(["metric", "method_code", "method_label", "comparison_label"], as_index=False)
-        .agg(
-            n_pairs=("gap_raw", "count"),
-            mean_gap_raw=("gap_raw", "mean"),
-            mean_gap_pct=("gap_pct", "mean"),
-            n_gap_pct_valid=("gap_pct", lambda s: int(s.notna().sum())),
-        )
+    summary = gap_by_dataset.groupby(
+        ["metric", "method_code", "method_label", "comparison_label"], as_index=False
+    ).agg(
+        n_pairs=("gap_raw", "count"),
+        mean_gap_raw=("gap_raw", "mean"),
+        mean_gap_pct=("gap_pct", "mean"),
+        n_gap_pct_valid=("gap_pct", lambda s: int(s.notna().sum())),
     )
     summary["mean_gap_raw"] = summary["mean_gap_raw"].round(6)
     summary["mean_gap_pct"] = summary["mean_gap_pct"].round(6)
 
     metric_order = {"MSI": 0, "ARI_CLASSF": 1}
     summary = (
-        summary
-        .assign(
+        summary.assign(
             _metric_order=lambda d: d["metric"].map(metric_order).fillna(99),
             _method_order=lambda d: d["method_code"].map(METHOD_ORDER).fillna(99),
         )
@@ -598,6 +616,7 @@ def compute_gap_vs_dbscan(
 # Outputs
 # ---------------------------------------------------------------------------
 
+
 def _format_gap_reviewer_table(gap_summary: pd.DataFrame) -> pd.DataFrame:
     family_labels = {"MSI": "ISM", "ARI_CLASSF": "IRA"}
     table = gap_summary.copy()
@@ -609,14 +628,16 @@ def _format_gap_reviewer_table(gap_summary: pd.DataFrame) -> pd.DataFrame:
             "mean_gap_pct": "gap_pct_medio",
         }
     )
-    return table[[
-        "familia",
-        "n_pairs",
-        "n_gap_pct_valid",
-        "comparativo",
-        "gap_medio",
-        "gap_pct_medio",
-    ]]
+    return table[
+        [
+            "familia",
+            "n_pairs",
+            "n_gap_pct_valid",
+            "comparativo",
+            "gap_medio",
+            "gap_pct_medio",
+        ]
+    ]
 
 
 def _barplot_h(
@@ -639,14 +660,23 @@ def _barplot_h(
 
     y = np.arange(len(labels))
     bars = ax.barh(
-        y, values, color=colors, edgecolor="black", linewidth=0.5, alpha=0.9,
+        y,
+        values,
+        color=colors,
+        edgecolor="black",
+        linewidth=0.5,
+        alpha=0.9,
     )
     for bar, v in zip(bars, values):
         if np.isnan(v):
             continue
         ax.text(
-            bar.get_width() + 0.01, bar.get_y() + bar.get_height() / 2,
-            f"{v:.1%}", va="center", ha="left", fontsize=9,
+            bar.get_width() + 0.01,
+            bar.get_y() + bar.get_height() / 2,
+            f"{v:.1%}",
+            va="center",
+            ha="left",
+            fontsize=9,
         )
 
     if reference_line is not None:
@@ -678,6 +708,7 @@ def _barplot_h(
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     argparse.ArgumentParser().parse_args()
 
@@ -693,17 +724,22 @@ def main() -> None:
 
     # MSI: all datasets.
     msi_table = compute_wlt_vs_dbscan(
-        medians, dbscan, metric_prefix="msi", dbscan_col="msi_dbscan",
+        medians,
+        dbscan,
+        metric_prefix="msi",
+        dbscan_col="msi_dbscan",
     )
     msi_table.to_csv(OUT_DIR / "mh_vs_dbscan_msi.csv", index=False)
     _barplot_h(
-        msi_table, value_col="overall_prop",
+        msi_table,
+        value_col="overall_prop",
         xlabel="Participa\u00e7\u00e3o nas vit\u00f3rias totais",
         metric_label="M\u00e9trica - ISM",
         out_path=OUT_DIR / "barplot_mh_vs_dbscan_msi_overall.png",
     )
     _barplot_h(
-        msi_table, value_col="relative_prop",
+        msi_table,
+        value_col="relative_prop",
         xlabel="Taxa de vit\u00f3ria (V / (V + D + E))",
         metric_label="M\u00e9trica - ISM",
         out_path=OUT_DIR / "barplot_mh_vs_dbscan_msi_relative.png",
@@ -712,18 +748,23 @@ def main() -> None:
 
     # ARI: CLASSF only.
     ari_table = compute_wlt_vs_dbscan(
-        medians, dbscan, metric_prefix="ari", dbscan_col="ari_dbscan",
+        medians,
+        dbscan,
+        metric_prefix="ari",
+        dbscan_col="ari_dbscan",
         group_filter="classf",
     )
     ari_table.to_csv(OUT_DIR / "mh_vs_dbscan_ari_classf.csv", index=False)
     _barplot_h(
-        ari_table, value_col="overall_prop",
+        ari_table,
+        value_col="overall_prop",
         xlabel="Participa\u00e7\u00e3o nas vit\u00f3rias totais",
         metric_label="M\u00e9trica - IRA",
         out_path=OUT_DIR / "barplot_mh_vs_dbscan_ari_classf_overall.png",
     )
     _barplot_h(
-        ari_table, value_col="relative_prop",
+        ari_table,
+        value_col="relative_prop",
         xlabel="Taxa de vit\u00f3ria (V / (V + D + E))",
         metric_label="M\u00e9trica - IRA",
         out_path=OUT_DIR / "barplot_mh_vs_dbscan_ari_classf_relative.png",
@@ -757,33 +798,41 @@ def main() -> None:
     print(ari_table.to_string(index=False))
     print("\n--- GAP m\u00e9dio vs DBSCAN (bruto e percentual) ---")
     if not gap_summary.empty:
-        display_gap = gap_summary[[
-            "metric",
-            "method_label",
-            "n_pairs",
-            "mean_gap_raw",
-            "mean_gap_pct",
-            "n_gap_pct_valid",
-        ]].rename(columns={
-            "metric": "metrica",
-            "method_label": "metodo",
-            "n_pairs": "N",
-            "mean_gap_raw": "gap_medio",
-            "mean_gap_pct": "gap_medio_pct",
-            "n_gap_pct_valid": "N_gap_pct",
-        })
+        display_gap = gap_summary[
+            [
+                "metric",
+                "method_label",
+                "n_pairs",
+                "mean_gap_raw",
+                "mean_gap_pct",
+                "n_gap_pct_valid",
+            ]
+        ].rename(
+            columns={
+                "metric": "metrica",
+                "method_label": "metodo",
+                "n_pairs": "N",
+                "mean_gap_raw": "gap_medio",
+                "mean_gap_pct": "gap_medio_pct",
+                "n_gap_pct_valid": "N_gap_pct",
+            }
+        )
         print(display_gap.to_string(index=False))
     else:
         print("  (sem dados de GAP)")
     print("\n--- Statistical tests: paired Wilcoxon MH vs DBSCAN ---")
     print("Wilcoxon MSI (Holm-Bonferroni m=3):")
     for r in wilcoxon_msi_st:
-        print(f"  {r['pair']}: p={r['p_value']}, p_holm={r['p_holm']}, "
-              f"sig_holm={r['significant_holm']}")
+        print(
+            f"  {r['pair']}: p={r['p_value']}, p_holm={r['p_holm']}, "
+            f"sig_holm={r['significant_holm']}"
+        )
     print("\nWilcoxon ARI (Holm-Bonferroni m=3):")
     for r in wilcoxon_ari_st:
-        print(f"  {r['pair']}: p={r['p_value']}, p_holm={r['p_holm']}, "
-              f"sig_holm={r['significant_holm']}")
+        print(
+            f"  {r['pair']}: p={r['p_value']}, p_holm={r['p_holm']}, "
+            f"sig_holm={r['significant_holm']}"
+        )
     print(f"\nArtifacts written to {OUT_DIR}")
 
 

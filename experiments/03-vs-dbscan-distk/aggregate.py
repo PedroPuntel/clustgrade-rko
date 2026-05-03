@@ -21,6 +21,7 @@ Downstream scripts (plot.py) must be updated to read this schema.
 Usage:
     poetry run python -m experiments.03-vs-dbscan-distk.aggregate
 """
+
 from __future__ import annotations
 
 import sys
@@ -36,22 +37,22 @@ for _p in [str(_ROOT / "src"), str(_ROOT)]:
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from utils.logging import get_logger
-
 from experiments._shared.utils import load_stored_labels
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 ARTIFACTS = Path(__file__).parent / "artifacts"
 
 DBSCAN_VARIANTS: list[tuple[str, str]] = [
-    ("DBSCAN-DistK", "distk"),      # baseline
+    ("DBSCAN-DistK", "distk"),  # baseline
 ]
 
 
 # ---------------------------------------------------------------------------
 # Loaders
 # ---------------------------------------------------------------------------
+
 
 def load_raw() -> pd.DataFrame:
     rko = pd.read_csv(ARTIFACTS / "rko_runs.csv")
@@ -75,9 +76,14 @@ def compute_rko_best(df: pd.DataFrame) -> pd.DataFrame:
     rko = df[df["algorithm"] == "ClustGrade-RKO"].copy()
     idx = rko.groupby(["dataset_id", "group"])["msi"].idxmax()
     best = rko.loc[idx.dropna()][["dataset_id", "group", "seed", "k", "msi", "ari"]].copy()
-    best = best.rename(columns={
-        "seed": "best_seed", "k": "k_rko", "msi": "msi_rko", "ari": "ari_rko",
-    })
+    best = best.rename(
+        columns={
+            "seed": "best_seed",
+            "k": "k_rko",
+            "msi": "msi_rko",
+            "ari": "ari_rko",
+        }
+    )
     return best.reset_index(drop=True)
 
 
@@ -86,14 +92,14 @@ def build_comparison(df: pd.DataFrame) -> pd.DataFrame:
     merged = compute_rko_best(df)
 
     for algo_name, suffix in DBSCAN_VARIANTS:
-        sub = df[df["algorithm"] == algo_name][
-            ["dataset_id", "group", "k", "msi", "ari"]
-        ].copy()
-        sub = sub.rename(columns={
-            "k": f"k_dbscan_{suffix}",
-            "msi": f"msi_dbscan_{suffix}",
-            "ari": f"ari_dbscan_{suffix}",
-        })
+        sub = df[df["algorithm"] == algo_name][["dataset_id", "group", "k", "msi", "ari"]].copy()
+        sub = sub.rename(
+            columns={
+                "k": f"k_dbscan_{suffix}",
+                "msi": f"msi_dbscan_{suffix}",
+                "ari": f"ari_dbscan_{suffix}",
+            }
+        )
         merged = merged.merge(sub, on=["dataset_id", "group"], how="left")
         merged[f"msi_delta_{suffix}"] = merged["msi_rko"] - merged[f"msi_dbscan_{suffix}"]
         merged[f"ari_delta_{suffix}"] = merged["ari_rko"] - merged[f"ari_dbscan_{suffix}"]
@@ -105,8 +111,11 @@ def build_comparison(df: pd.DataFrame) -> pd.DataFrame:
 # Statistical helpers
 # ---------------------------------------------------------------------------
 
+
 def wilcoxon_test(
-    vals_a: np.ndarray, vals_b: np.ndarray, label: str,
+    vals_a: np.ndarray,
+    vals_b: np.ndarray,
+    label: str,
 ) -> dict:
     mask = ~(np.isnan(vals_a) | np.isnan(vals_b))
     a_clean = vals_a[mask]
@@ -114,8 +123,13 @@ def wilcoxon_test(
     n = len(a_clean)
 
     if n < 5:
-        return {"metric": label, "n_pairs": n, "statistic": None,
-                "p_value": None, "significant": None}
+        return {
+            "metric": label,
+            "n_pairs": n,
+            "statistic": None,
+            "p_value": None,
+            "significant": None,
+        }
 
     wt = stats.wilcoxon(a_clean, b_clean, alternative="two-sided")
     return {
@@ -132,8 +146,13 @@ def win_loss_tie(deltas: np.ndarray, label: str, tol: float = 0.01) -> dict:
     wins = int(np.sum(valid > tol))
     losses = int(np.sum(valid < -tol))
     ties = int(len(valid) - wins - losses)
-    return {"metric": label, "rko_wins": wins, "rko_losses": losses, "ties": ties,
-            "total": len(valid)}
+    return {
+        "metric": label,
+        "rko_wins": wins,
+        "rko_losses": losses,
+        "ties": ties,
+        "total": len(valid),
+    }
 
 
 def holm_bonferroni(p_values: list[float], alpha: float = 0.05) -> list[bool]:
@@ -152,6 +171,7 @@ def holm_bonferroni(p_values: list[float], alpha: float = 0.05) -> list[bool]:
 # ---------------------------------------------------------------------------
 # Cluster-count accuracy on CLASSF ground truth
 # ---------------------------------------------------------------------------
+
 
 def compute_k_accuracy_classf(comp: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     """
@@ -192,19 +212,21 @@ def compute_k_accuracy_classf(comp: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         else:
             closer = "tie"
 
-        rows.append({
-            "dataset_id": ds,
-            "k_true": k_true,
-            "k_rko": k_rko,
-            "k_dbscan_distk": k_db,
-            "err_rko": err_rko,
-            "err_dbscan_distk": err_db,
-            "rko_correct": rko_ok,
-            "dbscan_correct": db_ok,
-            "rko_within1": rko_w1,
-            "dbscan_within1": db_w1,
-            "closer": closer,
-        })
+        rows.append(
+            {
+                "dataset_id": ds,
+                "k_true": k_true,
+                "k_rko": k_rko,
+                "k_dbscan_distk": k_db,
+                "err_rko": err_rko,
+                "err_dbscan_distk": err_db,
+                "rko_correct": rko_ok,
+                "dbscan_correct": db_ok,
+                "rko_within1": rko_w1,
+                "dbscan_within1": db_w1,
+                "closer": closer,
+            }
+        )
 
     per_dataset = pd.DataFrame(rows)
     summary = {
@@ -228,8 +250,13 @@ def compute_k_accuracy_classf(comp: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 # Plots
 # ---------------------------------------------------------------------------
 
+
 def plot_comparison_barplot(
-    comp: pd.DataFrame, metric: str, suffix: str, group_label: str, out_path: Path,
+    comp: pd.DataFrame,
+    metric: str,
+    suffix: str,
+    group_label: str,
+    out_path: Path,
 ) -> None:
     """Side-by-side bar chart for RKO vs a single DBSCAN variant."""
     sub = comp.sort_values(f"{metric}_delta_{suffix}")
@@ -287,6 +314,7 @@ def plot_delta_distribution(
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     df = load_raw()
@@ -397,12 +425,18 @@ def main() -> None:
     # --- Comparison bar plots (per DBSCAN variant) ---
     for algo_name, suffix in DBSCAN_VARIANTS:
         plot_comparison_barplot(
-            comp, "msi", suffix, "ALL",
+            comp,
+            "msi",
+            suffix,
+            "ALL",
             ARTIFACTS / f"barplot_msi_all_{suffix}.png",
         )
         if len(classf) > 0:
             plot_comparison_barplot(
-                classf, "ari", suffix, "CLASSF",
+                classf,
+                "ari",
+                suffix,
+                "CLASSF",
                 ARTIFACTS / f"barplot_ari_classf_{suffix}.png",
             )
 
@@ -410,13 +444,19 @@ def main() -> None:
     for _algo_name, suffix in DBSCAN_VARIANTS:
         all_msi_delta = comp[f"msi_delta_{suffix}"].values.astype(float)
         plot_delta_distribution(
-            all_msi_delta, comp["dataset_id"].tolist(), "MSI", suffix,
+            all_msi_delta,
+            comp["dataset_id"].tolist(),
+            "MSI",
+            suffix,
             ARTIFACTS / f"msi_delta_barplot_{suffix}.png",
         )
         if len(classf) > 0:
             ari_delta = classf[f"ari_delta_{suffix}"].values.astype(float)
             plot_delta_distribution(
-                ari_delta, classf["dataset_id"].tolist(), "ARI", suffix,
+                ari_delta,
+                classf["dataset_id"].tolist(),
+                "ARI",
+                suffix,
                 ARTIFACTS / f"ari_delta_barplot_{suffix}.png",
             )
 
